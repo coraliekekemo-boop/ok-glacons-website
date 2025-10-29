@@ -19,6 +19,14 @@ export default function Navigation() {
     { label: "Contact", path: "/contact" }
   ];
 
+  // Fonction pour vérifier si un lien est actif
+  const isActive = (path: string) => {
+    if (path === "/") {
+      return location === "/";
+    }
+    return location.startsWith(path);
+  };
+
   return (
     <nav className="fixed top-0 w-full bg-white/95 backdrop-blur-sm shadow-sm z-50">
       <div className="container mx-auto px-4 py-4">
@@ -43,13 +51,13 @@ export default function Navigation() {
                 <Link key={item.path} href={item.path}>
                   <a 
                     className={`relative px-4 py-2 rounded-lg transition-all duration-200 font-medium ${
-                      location === item.path 
+                      isActive(item.path)
                         ? 'text-blue-600 bg-blue-50 font-semibold' 
                         : 'text-slate-700 hover:text-blue-600 hover:bg-slate-50'
                     }`}
                   >
                     {item.label}
-                    {location === item.path && (
+                    {isActive(item.path) && (
                       <span className="absolute bottom-0 left-1/2 -translate-x-1/2 w-8 h-1 bg-blue-600 rounded-t-full"></span>
                     )}
                   </a>
@@ -125,13 +133,13 @@ export default function Navigation() {
                   <Link key={item.path} href={item.path}>
                     <a 
                       className={`group flex items-center gap-4 px-4 py-4 rounded-xl transition-all duration-200 ${
-                        location === item.path 
+                        isActive(item.path)
                           ? 'bg-blue-50 text-blue-600 font-semibold shadow-sm' 
                           : 'text-slate-700 hover:bg-slate-50 font-medium'
                       }`}
                     >
                       <div className={`w-1.5 h-8 rounded-full transition-colors ${
-                        location === item.path ? 'bg-blue-600' : 'bg-transparent group-hover:bg-slate-300'
+                        isActive(item.path) ? 'bg-blue-600' : 'bg-transparent group-hover:bg-slate-300'
                       }`}></div>
                       <span className="text-lg">{item.label}</span>
                     </a>
