@@ -57,6 +57,46 @@ const getStatusLabel = (status: OrderStatus) => {
   return labels[status] || status;
 };
 
+// Hiérarchie des membres basée sur le nombre de commandes
+const getMemberLevel = (totalOrders: number) => {
+  if (totalOrders >= 16) {
+    return {
+      label: "Membre VIP",
+      color: "bg-gradient-to-r from-yellow-400 to-orange-400 text-yellow-900",
+      icon: "⭐",
+      level: 5,
+    };
+  } else if (totalOrders >= 10) {
+    return {
+      label: "Membre Or",
+      color: "bg-gradient-to-r from-yellow-300 to-yellow-500 text-yellow-900",
+      icon: "🥇",
+      level: 4,
+    };
+  } else if (totalOrders >= 6) {
+    return {
+      label: "Membre Argent",
+      color: "bg-gradient-to-r from-slate-300 to-slate-400 text-slate-900",
+      icon: "🥈",
+      level: 3,
+    };
+  } else if (totalOrders >= 3) {
+    return {
+      label: "Membre Bronze",
+      color: "bg-gradient-to-r from-orange-300 to-orange-500 text-orange-900",
+      icon: "🥉",
+      level: 2,
+    };
+  } else {
+    return {
+      label: "Nouveau Client",
+      color: "bg-gradient-to-r from-blue-400 to-blue-500 text-blue-900",
+      icon: "✨",
+      level: 1,
+    };
+  }
+};
+
 export default function CustomerDashboard() {
   const [, setLocation] = useLocation();
   const [activeTab, setActiveTab] = useState<"profile" | "orders" | "favorites" | "recurring">("profile");
@@ -120,6 +160,24 @@ export default function CustomerDashboard() {
   const deliveredOrders = orders?.filter((o: any) => o.status === "delivered") || [];
   const totalSavings = profile ? Math.floor(profile.loyaltyPoints * 100) : 0; // Points * 100 = FCFA
   const nextReward = 10 - (profile?.totalOrders || 0) % 10;
+  const memberLevel = getMemberLevel(profile?.totalOrders || 0);
+  
+  // Calculer la progression vers le prochain niveau
+  const getNextLevelProgress = () => {
+    const totalOrders = profile?.totalOrders || 0;
+    if (totalOrders >= 16) return null; // Déjà au niveau max
+    
+    const nextMilestone = totalOrders >= 10 ? 16 : totalOrders >= 6 ? 10 : totalOrders >= 3 ? 6 : 3;
+    const ordersNeeded = nextMilestone - totalOrders;
+    const nextLevelName = nextMilestone === 16 ? "Membre VIP ⭐" : 
+                          nextMilestone === 10 ? "Membre Or 🥇" : 
+                          nextMilestone === 6 ? "Membre Argent 🥈" : 
+                          "Membre Bronze 🥉";
+    
+    return { ordersNeeded, nextLevelName, nextMilestone };
+  };
+  
+  const nextLevelProgress = getNextLevelProgress();
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-slate-50 via-white to-blue-50/30">
@@ -145,9 +203,9 @@ export default function CustomerDashboard() {
                 <div className="bg-white/10 backdrop-blur p-2 rounded-xl">
                   <User className="w-8 h-8" />
                 </div>
-                <Badge className="bg-yellow-400 text-yellow-900 hover:bg-yellow-400 px-3 py-1 text-sm font-bold">
-                  <Sparkles className="w-3 h-3 mr-1" />
-                  Membre VIP
+                <Badge className={`${memberLevel.color} hover:${memberLevel.color} px-3 py-1 text-sm font-bold`}>
+                  <span className="mr-1">{memberLevel.icon}</span>
+                  {memberLevel.label}
                 </Badge>
               </div>
               <h1 className="text-5xl lg:text-6xl font-bold mb-3" style={{ fontFamily: "'Playfair Display', serif" }}>
@@ -312,6 +370,50 @@ export default function CustomerDashboard() {
             </Card>
           </motion.div>
         </div>
+
+        {/* Progression vers le prochain niveau */}
+        {nextLevelProgress && (
+          <motion.div
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ delay: 0.45 }}
+            className="mb-8"
+          >
+            <Card className="p-6 bg-gradient-to-r from-indigo-600 via-purple-600 to-pink-600 text-white shadow-xl border-0 relative overflow-hidden">
+              <div className="absolute top-0 right-0 w-40 h-40 bg-white/10 rounded-full -translate-y-1/2 translate-x-1/2"></div>
+              <div className="absolute bottom-0 left-0 w-32 h-32 bg-white/10 rounded-full translate-y-1/2 -translate-x-1/2"></div>
+              
+              <div className="relative z-10 flex items-center justify-between gap-4">
+                <div className="flex items-center gap-4">
+                  <div className="bg-white/20 backdrop-blur p-3 rounded-2xl">
+                    <TrendingUp className="w-8 h-8" />
+                  </div>
+                  <div>
+                    <h3 className="text-xl font-bold mb-1">Prochain Niveau : {nextLevelProgress.nextLevelName}</h3>
+                    <p className="text-sm opacity-90">
+                      Plus que <span className="font-bold text-yellow-300">{nextLevelProgress.ordersNeeded} commande{nextLevelProgress.ordersNeeded > 1 ? 's' : ''}</span> pour débloquer ce niveau !
+                    </p>
+                  </div>
+                </div>
+                <div className="hidden md:block text-6xl opacity-20">
+                  {nextLevelProgress.nextLevelName.includes('VIP') ? '⭐' : 
+                   nextLevelProgress.nextLevelName.includes('Or') ? '🥇' : 
+                   nextLevelProgress.nextLevelName.includes('Argent') ? '🥈' : '🥉'}
+                </div>
+              </div>
+              
+              <div className="mt-4 w-full bg-white/20 rounded-full h-3 relative z-10">
+                <div
+                  className="bg-white h-3 rounded-full transition-all duration-500 shadow-lg"
+                  style={{ width: `${((profile?.totalOrders || 0) / nextLevelProgress.nextMilestone) * 100}%` }}
+                ></div>
+              </div>
+              <p className="text-xs mt-2 opacity-75 relative z-10">
+                {profile?.totalOrders || 0} / {nextLevelProgress.nextMilestone} commandes
+              </p>
+            </Card>
+          </motion.div>
+        )}
 
         {/* Code de parrainage - Version PRO */}
         <motion.div
@@ -508,9 +610,9 @@ export default function CustomerDashboard() {
                         }) : "Date inconnue"}
                       </p>
                     </div>
-                    <div className="bg-yellow-400 text-yellow-900 px-4 py-2 rounded-xl font-bold flex items-center gap-2 shadow-lg">
-                      <Sparkles className="w-5 h-5" />
-                      Membre VIP
+                    <div className={`${memberLevel.color} px-4 py-2 rounded-xl font-bold flex items-center gap-2 shadow-lg`}>
+                      <span className="text-lg">{memberLevel.icon}</span>
+                      {memberLevel.label}
                     </div>
                   </div>
                 </div>
