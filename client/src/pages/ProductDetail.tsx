@@ -68,7 +68,7 @@ export default function ProductDetail() {
           longDescription: "Glaçons transparents et purs pour bars, restaurants, événements et usage domestique. Disponibles en sacs de différentes tailles.",
           features: ["Eau purifiée", "Transparence parfaite", "Sans goût ni odeur", "Plusieurs formats"],
           highlight: false,
-          image: null
+          image: "/imageglaçonsdansglaciereavecboissons.jpg"
         },
         {
           icon: <Box className="w-8 h-8" />,
@@ -86,7 +86,7 @@ export default function ProductDetail() {
           longDescription: "CO2 solide à -78°C pour le transport de produits surgelés, effets spéciaux pour événements et nettoyage cryogénique.",
           features: ["Température -78°C", "Sans résidu", "Effets visuels", "Transport médical"],
           highlight: false,
-          image: null
+          image: "/cocktailsavecnosglaçons.jpg"
         }
       ]
     },
