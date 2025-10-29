@@ -38,15 +38,20 @@ export default function Navigation() {
             </Link>
             
             {/* Desktop Menu */}
-            <div className="hidden md:flex items-center gap-6">
+            <div className="hidden md:flex items-center gap-2">
               {navItems.map((item) => (
                 <Link key={item.path} href={item.path}>
                   <a 
-                    className={`text-slate-700 hover:text-blue-600 transition-colors font-medium ${
-                      location === item.path ? 'text-blue-600 font-semibold' : ''
+                    className={`relative px-4 py-2 rounded-lg transition-all duration-200 font-medium ${
+                      location === item.path 
+                        ? 'text-blue-600 bg-blue-50 font-semibold' 
+                        : 'text-slate-700 hover:text-blue-600 hover:bg-slate-50'
                     }`}
                   >
                     {item.label}
+                    {location === item.path && (
+                      <span className="absolute bottom-0 left-1/2 -translate-x-1/2 w-8 h-1 bg-blue-600 rounded-t-full"></span>
+                    )}
                   </a>
                 </Link>
               ))}
