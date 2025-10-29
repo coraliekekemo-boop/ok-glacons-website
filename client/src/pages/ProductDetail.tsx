@@ -77,7 +77,7 @@ export default function ProductDetail() {
           longDescription: "Blocs de glace de 10kg à 50kg pour la conservation alimentaire, événements extérieurs et besoins industriels. Fonte lente garantie.",
           features: ["Longue durée", "Plusieurs tailles", "Usage professionnel", "Conservation optimale"],
           highlight: false,
-          image: null
+          image: "/glaceenblocalancienne.jpg"
         },
         {
           icon: <Box className="w-8 h-8" />,
