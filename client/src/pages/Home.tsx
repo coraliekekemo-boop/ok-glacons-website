@@ -6,7 +6,9 @@ import {
   Award,
   Users,
   TrendingUp,
-  Sparkles
+  Sparkles,
+  Star,
+  Quote
 } from "lucide-react";
 import { Link } from "wouter";
 import Navigation from "@/components/Navigation";
@@ -16,6 +18,30 @@ export default function Home() {
   return (
     <div className="min-h-screen bg-gradient-to-b from-slate-50 to-white">
       <Navigation />
+
+      {/* Promotional Banner */}
+      <motion.div
+        initial={{ opacity: 0, y: -50 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ duration: 0.5, delay: 0.3 }}
+        className="bg-gradient-to-r from-green-600 via-blue-600 to-purple-600 text-white py-3 px-4 text-center relative overflow-hidden"
+      >
+        <div className="absolute inset-0 bg-gradient-to-r from-transparent via-white/10 to-transparent animate-shimmer" 
+             style={{ animation: 'shimmer 3s infinite' }}></div>
+        <div className="container mx-auto relative z-10">
+          <p className="text-sm md:text-base font-bold">
+            🎉 Offre Spéciale : -10% sur votre première commande | 
+            Livraison GRATUITE &gt; 15 000 FCFA | 
+            Service 24/7 disponible
+          </p>
+        </div>
+        <style>{`
+          @keyframes shimmer {
+            0%, 100% { transform: translateX(-100%); }
+            50% { transform: translateX(100%); }
+          }
+        `}</style>
+      </motion.div>
 
       {/* Hero Section */}
       <section className="pt-24 pb-16 px-4 min-h-[85vh] flex items-center">
@@ -187,6 +213,100 @@ export default function Home() {
             <Link href="/produits">
               <Button size="lg" className="gap-3 bg-blue-600 hover:bg-blue-700 text-lg px-12 h-16 rounded-2xl font-bold shadow-lg">
                 Découvrir nos produits
+                <ChevronRight className="w-5 h-5" />
+              </Button>
+            </Link>
+          </motion.div>
+        </div>
+      </section>
+
+      {/* Testimonials Section */}
+      <section className="py-24 px-4 bg-gradient-to-br from-blue-50 to-slate-50">
+        <div className="container mx-auto">
+          <motion.div
+            initial={{ opacity: 0, y: 30 }}
+            whileInView={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.6 }}
+            viewport={{ once: true }}
+            className="text-center mb-16"
+          >
+            <h2 className="text-5xl lg:text-6xl font-bold text-slate-900 mb-6" style={{ fontFamily: "'Playfair Display', serif" }}>
+              Ce que disent nos clients
+            </h2>
+            <p className="text-2xl text-slate-500 max-w-3xl mx-auto font-light">
+              La satisfaction client au cœur de notre engagement
+            </p>
+          </motion.div>
+
+          <div className="grid md:grid-cols-3 gap-8 max-w-7xl mx-auto">
+            {[
+              {
+                name: "Marie K.",
+                role: "Restauratrice, Cocody",
+                comment: "Coradis est notre fournisseur de glace depuis 3 ans. Service impeccable, livraison toujours à l'heure. La qualité de la glace OK Glaçons est exceptionnelle !",
+                rating: 5
+              },
+              {
+                name: "Jean-Paul D.",
+                role: "Gérant de Maquis, Yopougon",
+                comment: "Excellent rapport qualité-prix ! Les verres de glaçons sont une innovation géniale pour nos clients. Je recommande vivement !",
+                rating: 5
+              },
+              {
+                name: "Fatou S.",
+                role: "Hôtel, Plateau",
+                comment: "Pour nos événements, nous faisons toujours confiance à Coradis. Les mouchoirs Lanaïa sont d'une qualité premium. Service professionnel !",
+                rating: 5
+              }
+            ].map((testimonial, index) => (
+              <motion.div
+                key={index}
+                initial={{ opacity: 0, y: 30 }}
+                whileInView={{ opacity: 1, y: 0 }}
+                transition={{ duration: 0.6, delay: index * 0.15 }}
+                viewport={{ once: true }}
+                className="bg-white p-8 rounded-3xl shadow-lg hover:shadow-xl transition-all relative"
+              >
+                <Quote className="w-12 h-12 text-blue-200 absolute top-6 right-6 opacity-50" />
+                
+                {/* Stars */}
+                <div className="flex gap-1 mb-4">
+                  {[...Array(testimonial.rating)].map((_, i) => (
+                    <Star key={i} className="w-5 h-5 fill-yellow-400 text-yellow-400" />
+                  ))}
+                </div>
+                
+                <p className="text-slate-700 text-lg mb-6 leading-relaxed italic">
+                  "{testimonial.comment}"
+                </p>
+                
+                <div className="flex items-center gap-4 pt-4 border-t border-slate-100">
+                  <div className="w-12 h-12 rounded-full bg-gradient-to-br from-blue-400 to-blue-600 flex items-center justify-center text-white font-bold text-xl">
+                    {testimonial.name.charAt(0)}
+                  </div>
+                  <div>
+                    <h4 className="font-bold text-slate-900">{testimonial.name}</h4>
+                    <p className="text-sm text-slate-500">{testimonial.role}</p>
+                  </div>
+                </div>
+              </motion.div>
+            ))}
+          </div>
+
+          {/* Call to Action */}
+          <motion.div
+            initial={{ opacity: 0, y: 30 }}
+            whileInView={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.6 }}
+            viewport={{ once: true }}
+            className="mt-16 text-center"
+          >
+            <p className="text-xl text-slate-600 mb-6">
+              Rejoignez nos 500+ clients satisfaits
+            </p>
+            <Link href="/commander">
+              <Button size="lg" className="gap-3 bg-green-600 hover:bg-green-700 text-lg px-12 h-16 rounded-2xl font-bold shadow-lg">
+                Commander maintenant
                 <ChevronRight className="w-5 h-5" />
               </Button>
             </Link>

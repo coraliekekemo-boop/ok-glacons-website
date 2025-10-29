@@ -1,13 +1,25 @@
-import { useEffect } from "react";
+import { useEffect, useMemo } from "react";
 import { useLocation } from "wouter";
 import { trpc } from "@/lib/trpc";
 import { toast } from "sonner";
+import { motion } from "framer-motion";
 import Navigation from "@/components/Navigation";
 import Footer from "@/components/Footer";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
-import { LogOut, RefreshCw, Trash2 } from "lucide-react";
+import { 
+  LogOut, 
+  RefreshCw, 
+  Trash2, 
+  TrendingUp, 
+  Package, 
+  Clock, 
+  CheckCircle,
+  DollarSign,
+  Users,
+  Calendar
+} from "lucide-react";
 
 type OrderStatus = "pending" | "confirmed" | "in_delivery" | "delivered" | "cancelled";
 
@@ -100,6 +112,42 @@ export default function AdminDashboard() {
     return null;
   }
 
+  // Calculate statistics
+  const stats = useMemo(() => {
+    if (!ordersData) return null;
+
+    const totalRevenue = ordersData.reduce((sum: number, order: any) => sum + order.totalPrice, 0);
+    const totalOrders = ordersData.length;
+    const pendingOrders = ordersData.filter((o: any) => o.status === "pending").length;
+    const deliveredOrders = ordersData.filter((o: any) => o.status === "delivered").length;
+    const urgentOrders = ordersData.filter((o: any) => o.isUrgent === 1 || o.isUrgent === true).length;
+    
+    // Get unique customers
+    const uniqueCustomers = new Set(ordersData.map((o: any) => o.customerPhone)).size;
+    
+    // Calculate today's orders
+    const today = new Date().toISOString().split('T')[0];
+    const todaysOrders = ordersData.filter((o: any) => {
+      if (!o.createdAt) return false;
+      const orderDate = new Date(o.createdAt).toISOString().split('T')[0];
+      return orderDate === today;
+    }).length;
+
+    // Average order value
+    const averageOrderValue = totalOrders > 0 ? totalRevenue / totalOrders : 0;
+
+    return {
+      totalRevenue,
+      totalOrders,
+      pendingOrders,
+      deliveredOrders,
+      urgentOrders,
+      uniqueCustomers,
+      todaysOrders,
+      averageOrderValue
+    };
+  }, [ordersData]);
+
   return (
     <div className="min-h-screen bg-slate-50">
       <Navigation />
@@ -112,6 +160,103 @@ export default function AdminDashboard() {
       </section>
 
       <main className="container mx-auto py-12 px-4">
+        {/* Statistics Cards */}
+        {stats && (
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-12">
+            <motion.div
+              initial={{ opacity: 0, y: 20 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ delay: 0.1 }}
+            >
+              <Card className="p-6 bg-gradient-to-br from-blue-500 to-blue-600 text-white">
+                <div className="flex items-start justify-between mb-4">
+                  <div>
+                    <p className="text-blue-100 text-sm font-medium">Chiffre d'affaires</p>
+                    <h3 className="text-3xl font-bold mt-2">
+                      {stats.totalRevenue.toLocaleString()} F
+                    </h3>
+                  </div>
+                  <div className="bg-white/20 p-3 rounded-xl">
+                    <DollarSign className="w-6 h-6" />
+                  </div>
+                </div>
+                <p className="text-blue-100 text-sm">
+                  Moyenne: {stats.averageOrderValue.toLocaleString()} F
+                </p>
+              </Card>
+            </motion.div>
+
+            <motion.div
+              initial={{ opacity: 0, y: 20 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ delay: 0.2 }}
+            >
+              <Card className="p-6 bg-gradient-to-br from-green-500 to-green-600 text-white">
+                <div className="flex items-start justify-between mb-4">
+                  <div>
+                    <p className="text-green-100 text-sm font-medium">Total Commandes</p>
+                    <h3 className="text-3xl font-bold mt-2">
+                      {stats.totalOrders}
+                    </h3>
+                  </div>
+                  <div className="bg-white/20 p-3 rounded-xl">
+                    <Package className="w-6 h-6" />
+                  </div>
+                </div>
+                <p className="text-green-100 text-sm">
+                  Livrées: {stats.deliveredOrders}
+                </p>
+              </Card>
+            </motion.div>
+
+            <motion.div
+              initial={{ opacity: 0, y: 20 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ delay: 0.3 }}
+            >
+              <Card className="p-6 bg-gradient-to-br from-yellow-500 to-orange-500 text-white">
+                <div className="flex items-start justify-between mb-4">
+                  <div>
+                    <p className="text-yellow-100 text-sm font-medium">En attente</p>
+                    <h3 className="text-3xl font-bold mt-2">
+                      {stats.pendingOrders}
+                    </h3>
+                  </div>
+                  <div className="bg-white/20 p-3 rounded-xl">
+                    <Clock className="w-6 h-6" />
+                  </div>
+                </div>
+                <p className="text-yellow-100 text-sm">
+                  Urgent: {stats.urgentOrders}
+                </p>
+              </Card>
+            </motion.div>
+
+            <motion.div
+              initial={{ opacity: 0, y: 20 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ delay: 0.4 }}
+            >
+              <Card className="p-6 bg-gradient-to-br from-purple-500 to-purple-600 text-white">
+                <div className="flex items-start justify-between mb-4">
+                  <div>
+                    <p className="text-purple-100 text-sm font-medium">Aujourd'hui</p>
+                    <h3 className="text-3xl font-bold mt-2">
+                      {stats.todaysOrders}
+                    </h3>
+                  </div>
+                  <div className="bg-white/20 p-3 rounded-xl">
+                    <Calendar className="w-6 h-6" />
+                  </div>
+                </div>
+                <p className="text-purple-100 text-sm">
+                  Clients: {stats.uniqueCustomers}
+                </p>
+              </Card>
+            </motion.div>
+          </div>
+        )}
+
         <div className="flex justify-between items-center mb-8">
           <h2 className="text-3xl font-bold text-slate-900">
             Commandes ({ordersData?.length || 0})

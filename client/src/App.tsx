@@ -5,11 +5,13 @@ import { Route, Switch } from "wouter";
 import ErrorBoundary from "./components/ErrorBoundary";
 import { ThemeProvider } from "./contexts/ThemeContext";
 import { CartProvider } from "./contexts/CartContext";
+import WhatsAppButton from "./components/WhatsAppButton";
 import Home from "./pages/Home";
 import Products from "./pages/Products";
 import ProductDetail from "./pages/ProductDetail";
 import About from "./pages/About";
 import Contact from "./pages/Contact";
+import FAQ from "./pages/FAQ";
 import Order from "./pages/Order";
 import Cart from "./pages/Cart";
 import AdminLogin from "./pages/AdminLogin";
@@ -24,6 +26,7 @@ function Router() {
       <Route path={"/produits/:id"} component={ProductDetail} />
       <Route path={"/a-propos"} component={About} />
       <Route path={"/contact"} component={Contact} />
+      <Route path={"/faq"} component={FAQ} />
       <Route path={"/panier"} component={Cart} />
       <Route path={"/commander"} component={Order} />
       <Route path={"/admin/login"} component={AdminLogin} />
@@ -51,6 +54,7 @@ function App() {
           <TooltipProvider>
             <Toaster />
             <Router />
+            <WhatsAppButton />
           </TooltipProvider>
         </CartProvider>
       </ThemeProvider>

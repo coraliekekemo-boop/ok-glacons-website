@@ -1,7 +1,7 @@
 import { Button } from "@/components/ui/button";
 import { Card, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { motion } from "framer-motion";
-import { Phone, Mail, MapPin, Clock, ShoppingCart, MessageCircle, Facebook } from "lucide-react";
+import { Phone, Mail, MapPin, Clock, ShoppingCart, MessageCircle, Facebook, Truck, Check } from "lucide-react";
 import Navigation from "@/components/Navigation";
 import Footer from "@/components/Footer";
 
@@ -307,37 +307,158 @@ export default function Contact() {
         </div>
       </section>
 
-      {/* Delivery Zones */}
-      <section className="py-20 px-4 bg-white">
+      {/* Delivery Zones avec Tarifs */}
+      <section className="py-20 px-4 bg-gradient-to-br from-slate-50 to-white">
         <div className="container mx-auto">
           <motion.div
             initial={{ opacity: 0, y: 30 }}
             whileInView={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.6 }}
             viewport={{ once: true }}
-            className="text-center max-w-3xl mx-auto"
+            className="text-center mb-16"
           >
             <h2 className="text-5xl lg:text-6xl font-bold text-slate-900 mb-6" style={{ fontFamily: "'Playfair Display', serif" }}>
-              Zones de Livraison
+              Zones de Livraison & Tarifs
             </h2>
-            <p className="text-xl text-slate-500 mb-12 leading-relaxed font-light">
-              Nous livrons partout à Abidjan et ses environs
+            <p className="text-xl text-slate-500 max-w-3xl mx-auto leading-relaxed font-light">
+              Nous livrons partout à Abidjan, 7j/7, 24h/24
             </p>
-            <div className="grid md:grid-cols-3 gap-6 text-center">
-              <div className="bg-gradient-to-br from-slate-50 to-white p-8 rounded-3xl border-2 border-slate-200 hover:border-blue-300 transition-all">
-                <div className="text-4xl font-bold text-blue-600 mb-3">Abidjan Nord</div>
-                <p className="text-slate-600 font-medium">Yopougon, Abobo...</p>
-                <p className="text-sm text-slate-500 mt-3">Livraison express</p>
-              </div>
-              <div className="bg-gradient-to-br from-slate-50 to-white p-8 rounded-3xl border-2 border-blue-300 hover:border-blue-400 transition-all shadow-lg">
-                <div className="text-4xl font-bold text-blue-600 mb-3">Centre</div>
-                <p className="text-slate-600 font-medium">Plateau, Cocody...</p>
-                <p className="text-sm text-slate-500 mt-3">Livraison express</p>
-              </div>
-              <div className="bg-gradient-to-br from-slate-50 to-white p-8 rounded-3xl border-2 border-slate-200 hover:border-blue-300 transition-all">
-                <div className="text-4xl font-bold text-blue-600 mb-3">Abidjan Sud</div>
-                <p className="text-slate-600 font-medium">Marcory, Koumassi...</p>
-                <p className="text-sm text-slate-500 mt-3">Livraison express</p>
+          </motion.div>
+
+          {/* Zones Cards */}
+          <div className="grid md:grid-cols-3 gap-8 mb-12 max-w-6xl mx-auto">
+            {[
+              {
+                zone: "Zone 1",
+                price: "1 000 FCFA",
+                areas: ["Plateau", "Cocody", "Marcory", "Treichville"],
+                delay: "1-2h",
+                color: "from-blue-500 to-blue-600",
+                popular: true
+              },
+              {
+                zone: "Zone 2",
+                price: "1 500 FCFA",
+                areas: ["Yopougon", "Abobo", "Adjamé", "Koumassi"],
+                delay: "2-3h",
+                color: "from-green-500 to-green-600",
+                popular: false
+              },
+              {
+                zone: "Zone 3",
+                price: "2 000 FCFA",
+                areas: ["Bingerville", "Anyama", "Port-Bouët", "Songon"],
+                delay: "3-4h",
+                color: "from-purple-500 to-purple-600",
+                popular: false
+              }
+            ].map((zone, index) => (
+              <motion.div
+                key={index}
+                initial={{ opacity: 0, y: 30 }}
+                whileInView={{ opacity: 1, y: 0 }}
+                transition={{ duration: 0.6, delay: index * 0.1 }}
+                viewport={{ once: true }}
+                className="relative"
+              >
+                {zone.popular && (
+                  <div className="absolute -top-4 left-1/2 -translate-x-1/2 z-10">
+                    <span className="bg-yellow-400 text-yellow-900 px-4 py-1 rounded-full text-sm font-bold shadow-lg">
+                      ⭐ Populaire
+                    </span>
+                  </div>
+                )}
+                <Card className={`p-8 bg-gradient-to-br ${zone.color} text-white h-full hover:shadow-2xl transition-all hover:scale-105 ${zone.popular ? 'border-4 border-yellow-400' : ''}`}>
+                  <div className="flex items-center justify-between mb-6">
+                    <h3 className="text-3xl font-bold">{zone.zone}</h3>
+                    <Truck className="w-10 h-10 opacity-80" />
+                  </div>
+                  
+                  <div className="mb-6">
+                    <div className="text-5xl font-bold mb-2">{zone.price}</div>
+                    <div className="text-sm opacity-90">Livraison standard</div>
+                  </div>
+
+                  <div className="space-y-3 mb-6">
+                    {zone.areas.map((area, i) => (
+                      <div key={i} className="flex items-center gap-2">
+                        <Check className="w-5 h-5 flex-shrink-0" />
+                        <span className="text-base">{area}</span>
+                      </div>
+                    ))}
+                  </div>
+
+                  <div className="bg-white/20 backdrop-blur-sm rounded-xl p-4 border border-white/30">
+                    <div className="flex items-center gap-2">
+                      <Clock className="w-5 h-5" />
+                      <span className="font-semibold">Délai: {zone.delay}</span>
+                    </div>
+                  </div>
+                </Card>
+              </motion.div>
+            ))}
+          </div>
+
+          {/* Benefits */}
+          <motion.div
+            initial={{ opacity: 0, y: 30 }}
+            whileInView={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.6 }}
+            viewport={{ once: true }}
+            className="bg-white rounded-3xl shadow-xl p-8 md:p-12 max-w-4xl mx-auto"
+          >
+            <h3 className="text-3xl font-bold text-slate-900 mb-8 text-center">
+              Avantages de Notre Service
+            </h3>
+            
+            <div className="grid md:grid-cols-2 gap-6">
+              {[
+                {
+                  title: "Livraison GRATUITE",
+                  description: "Pour toute commande > 15 000 FCFA",
+                  icon: <Truck className="w-6 h-6" />
+                },
+                {
+                  title: "Express disponible",
+                  description: "Livraison en 1-2h (+500 FCFA)",
+                  icon: <Clock className="w-6 h-6" />
+                },
+                {
+                  title: "Service 24/7",
+                  description: "Commandez à toute heure",
+                  icon: <Phone className="w-6 h-6" />
+                },
+                {
+                  title: "Suivi en temps réel",
+                  description: "Notifications SMS à chaque étape",
+                  icon: <MessageCircle className="w-6 h-6" />
+                }
+              ].map((benefit, i) => (
+                <div key={i} className="flex gap-4 p-4 rounded-xl bg-gradient-to-br from-blue-50 to-slate-50">
+                  <div className="bg-blue-600 text-white p-3 rounded-xl h-fit flex-shrink-0">
+                    {benefit.icon}
+                  </div>
+                  <div>
+                    <h4 className="font-bold text-slate-900 mb-1">{benefit.title}</h4>
+                    <p className="text-slate-600 text-sm">{benefit.description}</p>
+                  </div>
+                </div>
+              ))}
+            </div>
+
+            <div className="mt-8 p-6 bg-gradient-to-r from-green-50 to-blue-50 rounded-2xl border-2 border-green-200">
+              <p className="text-center text-lg font-semibold text-slate-900 mb-4">
+                🎉 Offre Spéciale : Première commande = -10%
+              </p>
+              <div className="flex justify-center gap-4">
+                <Button 
+                  size="lg"
+                  className="gap-2 bg-green-600 hover:bg-green-700 font-bold"
+                  onClick={() => window.open(`https://wa.me/${whatsappNumber}?text=${encodeURIComponent('Bonjour, je souhaite profiter de l\'offre -10% sur ma première commande !')}`, '_blank')}
+                >
+                  <MessageCircle className="w-5 h-5" />
+                  Commander maintenant
+                </Button>
               </div>
             </div>
           </motion.div>
