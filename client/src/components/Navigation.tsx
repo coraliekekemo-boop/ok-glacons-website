@@ -174,6 +174,29 @@ export default function Navigation() {
                     )}
                   </Button>
                 </Link>
+                {customerAuth?.isAuthenticated ? (
+                  <Link href="/mon-espace">
+                    <Button 
+                      variant="outline"
+                      size="lg"
+                      className="w-full gap-3 border-2 border-purple-200 bg-purple-50 hover:bg-purple-100 text-purple-700 h-14 text-base font-semibold"
+                    >
+                      <User className="w-5 h-5" />
+                      Mon Espace
+                    </Button>
+                  </Link>
+                ) : (
+                  <Link href="/connexion-client">
+                    <Button 
+                      variant="outline"
+                      size="lg"
+                      className="w-full gap-3 border-2 border-indigo-200 bg-indigo-50 hover:bg-indigo-100 text-indigo-700 h-14 text-base font-semibold"
+                    >
+                      <User className="w-5 h-5" />
+                      Connexion
+                    </Button>
+                  </Link>
+                )}
                 <Link href="/commander">
                   <Button 
                     size="lg"
