@@ -35,7 +35,7 @@ export const products: Product[] = [
   { id: "glacons-verres", name: "Verres de Glaçons", price: 500, unit: "verre", category: "ok-glacons" },
   { id: "glacons-5kg", name: "Glaçons (Sac 5kg)", price: 1000, unit: "sac", category: "ok-glacons" },
   { id: "blocs-ancienne", name: "Blocs à l'ancienne", price: 100, unit: "unité", category: "ok-glacons" },
-  { id: "glace-carbonique", name: "Glace Carbonique", price: 6000, unit: "kg", category: "ok-glacons" },
+  { id: "glace-carbonique", name: "Glace Carbonique", price: 7000, unit: "kg", category: "ok-glacons" },
 ];
 
 export function CartProvider({ children }: { children: ReactNode }) {

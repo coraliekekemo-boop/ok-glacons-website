@@ -272,25 +272,49 @@ export const customersRouter = router({
         throw new Error("Vous ne pouvez pas utiliser votre propre code");
       }
 
-      // Donner 2000 FCFA au filleul
+      // Fonction pour générer un reward aléatoire
+      const generateRandomReward = () => {
+        const rewards = [
+          { type: "lanaia_tube", label: "Tube Lanaïa Gratuit" },
+          { type: "lanaia_paquet", label: "Paquet Lanaïa Gratuit" },
+          { type: "lanaia_poche", label: "Paquet Lanaïa Poche Gratuit" },
+          { type: "livraison_gratuite", label: "Livraison Gratuite" },
+        ];
+        return rewards[Math.floor(Math.random() * rewards.length)];
+      };
+
+      // Créer un ticket à gratter pour le filleul
+      const scratchCardsCollection = collection(db, "scratchCards");
+      const referredReward = generateRandomReward();
+      await addDoc(scratchCardsCollection, {
+        customerId: session.id,
+        reward: referredReward.type,
+        rewardLabel: referredReward.label,
+        scratched: false,
+        createdAt: new Date().toISOString(),
+        scratchedAt: null,
+      });
+
+      // Créer un ticket à gratter pour le parrain
+      const referrerReward = generateRandomReward();
+      await addDoc(scratchCardsCollection, {
+        customerId: referrerId,
+        reward: referrerReward.type,
+        rewardLabel: referrerReward.label,
+        scratched: false,
+        createdAt: new Date().toISOString(),
+        scratchedAt: null,
+      });
+
+      // Marquer le client comme parrainé
       const customerRef = doc(db, "customers", session.id);
       await updateDoc(customerRef, {
         referredBy: referrerId,
-        loyaltyPoints: 20, // 2000 FCFA = 20 points
-      });
-
-      // Donner 2000 FCFA au parrain
-      const referrerRef = doc(db, "customers", referrerId);
-      const referrerSnap = await getDoc(referrerRef);
-      const referrerData = referrerSnap.data();
-      
-      await updateDoc(referrerRef, {
-        loyaltyPoints: (referrerData?.loyaltyPoints || 0) + 20,
       });
 
       return {
         success: true,
-        message: "Code de parrainage appliqué ! Vous avez reçu 2000 FCFA de crédit",
+        message: "Code de parrainage appliqué ! Grattez votre ticket pour découvrir votre cadeau 🎁",
       };
     }),
 
@@ -419,5 +443,78 @@ export const customersRouter = router({
 
     return { hasDiscount: false, discount: 0, reason: null };
   }),
+
+  // Obtenir les tickets à gratter du client
+  getScratchCards: publicProcedure.query(async ({ ctx }) => {
+    const sessionCookie = ctx.req?.cookies?.customer_session;
+
+    if (!sessionCookie) {
+      throw new Error("Non authentifié");
+    }
+
+    const session = JSON.parse(sessionCookie);
+    
+    const scratchCardsCollection = collection(db, "scratchCards");
+    const q = query(
+      scratchCardsCollection, 
+      where("customerId", "==", session.id),
+      orderBy("createdAt", "desc")
+    );
+    const querySnapshot = await getDocs(q);
+    
+    const scratchCards = querySnapshot.docs.map((doc) => ({
+      id: doc.id,
+      ...doc.data(),
+    }));
+
+    return scratchCards;
+  }),
+
+  // Gratter un ticket
+  scratchCard: publicProcedure
+    .input(
+      z.object({
+        cardId: z.string(),
+      })
+    )
+    .mutation(async ({ input, ctx }) => {
+      const sessionCookie = ctx.req?.cookies?.customer_session;
+
+      if (!sessionCookie) {
+        throw new Error("Non authentifié");
+      }
+
+      const session = JSON.parse(sessionCookie);
+      
+      // Vérifier que le ticket appartient au client
+      const cardRef = doc(db, "scratchCards", input.cardId);
+      const cardSnap = await getDoc(cardRef);
+
+      if (!cardSnap.exists()) {
+        throw new Error("Ticket introuvable");
+      }
+
+      const cardData = cardSnap.data();
+
+      if (cardData.customerId !== session.id) {
+        throw new Error("Ce ticket ne vous appartient pas");
+      }
+
+      if (cardData.scratched) {
+        throw new Error("Ce ticket a déjà été gratté");
+      }
+
+      // Marquer le ticket comme gratté
+      await updateDoc(cardRef, {
+        scratched: true,
+        scratchedAt: new Date().toISOString(),
+      });
+
+      return {
+        success: true,
+        reward: cardData.reward,
+        rewardLabel: cardData.rewardLabel,
+      };
+    }),
 });
 
