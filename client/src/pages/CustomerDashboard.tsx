@@ -99,7 +99,7 @@ const getMemberLevel = (totalOrders: number) => {
 
 export default function CustomerDashboard() {
   const [, setLocation] = useLocation();
-  const [activeTab, setActiveTab] = useState<"profile" | "orders" | "favorites" | "recurring">("profile");
+  const [activeTab, setActiveTab] = useState<"profile" | "orders" | "favorites" | "scratch-cards" | "recurring">("profile");
 
   const { data: authData, isLoading: isLoadingAuth } = trpc.customers.checkAuth.useQuery();
   const { data: profile, refetch: refetchProfile } = trpc.customers.getProfile.useQuery(undefined, {
@@ -111,9 +111,13 @@ export default function CustomerDashboard() {
   const { data: favorites, refetch: refetchFavorites } = trpc.customers.getFavoriteOrders.useQuery(undefined, {
     enabled: authData?.isAuthenticated,
   });
+  const { data: scratchCards, refetch: refetchScratchCards } = trpc.customers.getScratchCards.useQuery(undefined, {
+    enabled: authData?.isAuthenticated,
+  });
 
   const logoutMutation = trpc.customers.logout.useMutation();
   const addFavoriteMutation = trpc.customers.addFavoriteOrder.useMutation();
+  const scratchCardMutation = trpc.customers.scratchCard.useMutation();
 
   useEffect(() => {
     if (!isLoadingAuth && !authData?.isAuthenticated) {
@@ -145,6 +149,16 @@ export default function CustomerDashboard() {
     if (profile?.referralCode) {
       navigator.clipboard.writeText(profile.referralCode);
       toast.success("Code copié !");
+    }
+  };
+
+  const handleScratchCard = async (cardId: string) => {
+    try {
+      const result = await scratchCardMutation.mutateAsync({ cardId });
+      toast.success(`🎉 Vous avez gagné: ${result.rewardLabel} !`);
+      refetchScratchCards();
+    } catch (error: any) {
+      toast.error("Erreur: " + error.message);
     }
   };
 
@@ -467,7 +481,7 @@ export default function CustomerDashboard() {
 
         {/* Tabs - Version PRO */}
         <div className="bg-white rounded-2xl shadow-xl border-2 border-slate-100 p-2 mb-8">
-          <div className="grid grid-cols-2 md:grid-cols-4 gap-2">
+          <div className="grid grid-cols-2 md:grid-cols-5 gap-2">
             <motion.button
               whileHover={{ scale: 1.02 }}
               whileTap={{ scale: 0.98 }}
@@ -479,7 +493,8 @@ export default function CustomerDashboard() {
               }`}
             >
               <User className="w-5 h-5" />
-              <span>Mon Profil</span>
+              <span className="hidden lg:inline">Mon Profil</span>
+              <span className="lg:hidden">Profil</span>
             </motion.button>
             
             <motion.button
@@ -493,8 +508,8 @@ export default function CustomerDashboard() {
               }`}
             >
               <ShoppingCart className="w-5 h-5" />
-              <span className="hidden sm:inline">Mes Commandes</span>
-              <span className="sm:hidden">Commandes</span>
+              <span className="hidden sm:inline">Commandes</span>
+              <span className="sm:hidden">Cmd</span>
             </motion.button>
             
             <motion.button
@@ -508,7 +523,28 @@ export default function CustomerDashboard() {
               }`}
             >
               <Heart className="w-5 h-5" />
-              <span>Favoris</span>
+              <span className="hidden lg:inline">Favoris</span>
+              <span className="lg:hidden">❤️</span>
+            </motion.button>
+            
+            <motion.button
+              whileHover={{ scale: 1.02 }}
+              whileTap={{ scale: 0.98 }}
+              onClick={() => setActiveTab("scratch-cards")}
+              className={`px-6 py-4 font-bold rounded-xl transition-all duration-300 flex items-center justify-center gap-2 relative ${
+                activeTab === "scratch-cards"
+                  ? "bg-gradient-to-r from-orange-600 to-orange-700 text-white shadow-lg"
+                  : "bg-slate-50 text-slate-600 hover:bg-slate-100"
+              }`}
+            >
+              <Gift className="w-5 h-5" />
+              <span className="hidden lg:inline">Tickets</span>
+              <span className="lg:hidden">🎁</span>
+              {scratchCards && scratchCards.filter((c: any) => !c.scratched).length > 0 && (
+                <span className="absolute -top-1 -right-1 bg-red-500 text-white text-xs w-5 h-5 rounded-full flex items-center justify-center font-bold">
+                  {scratchCards.filter((c: any) => !c.scratched).length}
+                </span>
+              )}
             </motion.button>
             
             <motion.button
@@ -522,8 +558,8 @@ export default function CustomerDashboard() {
               }`}
             >
               <RefreshCw className="w-5 h-5" />
-              <span className="hidden sm:inline">Abonnements</span>
-              <span className="sm:hidden">Abos</span>
+              <span className="hidden sm:inline">Abos</span>
+              <span className="sm:hidden">🔄</span>
             </motion.button>
           </div>
         </div>
@@ -725,6 +761,151 @@ export default function CustomerDashboard() {
               </Card>
             )}
           </div>
+        )}
+
+        {activeTab === "scratch-cards" && (
+          <motion.div
+            key="scratch-cards"
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            exit={{ opacity: 0, y: -20 }}
+            transition={{ duration: 0.3 }}
+          >
+            <Card className="p-8 shadow-xl border-2 border-orange-100 bg-gradient-to-br from-orange-50 to-white">
+              <div className="flex items-center gap-3 mb-8">
+                <div className="bg-gradient-to-br from-orange-600 to-orange-700 p-3 rounded-2xl shadow-lg">
+                  <Gift className="w-6 h-6 text-white" />
+                </div>
+                <h2 className="text-3xl font-bold text-slate-900" style={{ fontFamily: "'Playfair Display', serif" }}>
+                  Mes Tickets à Gratter
+                </h2>
+              </div>
+
+              {scratchCards && scratchCards.length > 0 ? (
+                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                  {scratchCards.map((card: any) => (
+                    <motion.div
+                      key={card.id}
+                      initial={{ scale: 0.9, opacity: 0 }}
+                      animate={{ scale: 1, opacity: 1 }}
+                      whileHover={{ scale: card.scratched ? 1 : 1.05 }}
+                      className="relative"
+                    >
+                      <Card className={`p-6 relative overflow-hidden ${
+                        card.scratched 
+                          ? 'bg-gradient-to-br from-slate-100 to-slate-200 border-2 border-slate-300' 
+                          : 'bg-gradient-to-br from-orange-400 via-orange-500 to-orange-600 border-2 border-orange-700 shadow-2xl'
+                      }`}>
+                        {/* Decorative elements for unscratched cards */}
+                        {!card.scratched && (
+                          <>
+                            <div className="absolute top-0 right-0 w-32 h-32 bg-white/10 rounded-full -translate-y-1/2 translate-x-1/2"></div>
+                            <div className="absolute bottom-0 left-0 w-24 h-24 bg-white/10 rounded-full translate-y-1/2 -translate-x-1/2"></div>
+                          </>
+                        )}
+
+                        <div className="relative z-10">
+                          {!card.scratched ? (
+                            <>
+                              <div className="text-center mb-6">
+                                <div className="bg-white/20 backdrop-blur p-4 rounded-2xl mb-4 inline-block">
+                                  <Gift className="w-16 h-16 text-white" />
+                                </div>
+                                <h3 className="text-2xl font-bold text-white mb-2">
+                                  🎁 Cadeau Mystère
+                                </h3>
+                                <p className="text-white/90 text-sm">
+                                  Grattez pour découvrir !
+                                </p>
+                              </div>
+
+                              <Button
+                                onClick={() => handleScratchCard(card.id)}
+                                disabled={scratchCardMutation.isPending}
+                                className="w-full bg-white text-orange-600 hover:bg-white/90 font-bold text-lg py-6 shadow-xl"
+                              >
+                                {scratchCardMutation.isPending ? (
+                                  <>
+                                    <div className="w-5 h-5 border-3 border-orange-600 border-t-transparent rounded-full animate-spin mr-2"></div>
+                                    Grattage...
+                                  </>
+                                ) : (
+                                  <>
+                                    <Sparkles className="w-5 h-5 mr-2" />
+                                    Gratter le Ticket
+                                  </>
+                                )}
+                              </Button>
+                            </>
+                          ) : (
+                            <>
+                              <div className="text-center mb-4">
+                                <Badge className="bg-green-500 text-white mb-3 px-4 py-2 text-sm">
+                                  ✓ Déjà gratté
+                                </Badge>
+                                <div className="bg-gradient-to-br from-green-500 to-green-600 p-6 rounded-2xl mb-4">
+                                  <Gift className="w-12 h-12 text-white mx-auto mb-3" />
+                                  <h3 className="text-xl font-bold text-white mb-1">
+                                    Vous avez gagné :
+                                  </h3>
+                                  <p className="text-white/90 font-semibold text-lg">
+                                    {card.rewardLabel}
+                                  </p>
+                                </div>
+                                <p className="text-xs text-slate-500">
+                                  Contactez-nous pour récupérer votre cadeau
+                                </p>
+                              </div>
+                            </>
+                          )}
+
+                          <div className="mt-4 pt-4 border-t border-white/20">
+                            <p className="text-xs text-center text-white/70">
+                              {new Date(card.createdAt).toLocaleDateString('fr-FR', {
+                                day: 'numeric',
+                                month: 'long',
+                                year: 'numeric'
+                              })}
+                            </p>
+                          </div>
+                        </div>
+                      </Card>
+                    </motion.div>
+                  ))}
+                </div>
+              ) : (
+                <Card className="p-12 text-center bg-gradient-to-br from-orange-50 to-white border-2 border-orange-200">
+                  <div className="bg-gradient-to-br from-orange-500 to-orange-600 p-6 rounded-full w-24 h-24 mx-auto mb-6 flex items-center justify-center shadow-xl">
+                    <Gift className="w-12 h-12 text-white" />
+                  </div>
+                  <h3 className="text-2xl font-bold text-slate-900 mb-3">
+                    Aucun ticket pour le moment
+                  </h3>
+                  <p className="text-slate-600 mb-6 max-w-md mx-auto">
+                    Parrainez vos amis pour recevoir des tickets à gratter et gagner des cadeaux surprises ! 🎁
+                  </p>
+                  <div className="bg-blue-50 p-6 rounded-xl max-w-lg mx-auto border-2 border-blue-200">
+                    <p className="text-sm font-semibold text-blue-900 mb-2">
+                      💡 Votre code de parrainage :
+                    </p>
+                    <div className="flex items-center gap-2 justify-center">
+                      <code className="bg-white px-6 py-3 rounded-lg font-bold text-2xl text-blue-600 border-2 border-blue-300">
+                        {profile?.referralCode}
+                      </code>
+                      <Button
+                        onClick={copyReferralCode}
+                        variant="outline"
+                        size="sm"
+                        className="border-blue-300 hover:bg-blue-100"
+                      >
+                        <Copy className="w-4 h-4" />
+                      </Button>
+                    </div>
+                  </div>
+                </Card>
+              )}
+            </Card>
+          </motion.div>
         )}
 
         {activeTab === "recurring" && (
