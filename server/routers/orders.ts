@@ -34,6 +34,7 @@ export const ordersRouter = router({
           })
         ),
         totalPrice: z.number(),
+        customerId: z.string().optional(), // ID du client si connecté
       })
     )
     .mutation(async ({ input }) => {
@@ -47,6 +48,8 @@ export const ordersRouter = router({
         notes: input.notes || "",
         totalPrice: input.totalPrice,
         status: "pending",
+        customerId: input.customerId || null, // Associer au client si connecté
+        loyaltyPointsEarned: 0, // Sera mis à jour quand la commande est livrée
         items: input.items.map((item) => ({
           productName: item.productName,
           productUnit: item.productUnit,
@@ -110,6 +113,49 @@ export const ordersRouter = router({
     )
     .mutation(async ({ input }) => {
       const docRef = doc(db, "orders", input.orderId);
+      const orderSnap = await getDoc(docRef);
+      
+      if (!orderSnap.exists()) {
+        throw new Error("Commande non trouvée");
+      }
+
+      const orderData = orderSnap.data();
+
+      // Si la commande passe à "delivered" et qu'elle a un customerId
+      if (input.status === "delivered" && orderData.customerId && orderData.loyaltyPointsEarned === 0) {
+        const customerId = orderData.customerId;
+        const totalPrice = orderData.totalPrice;
+        
+        // Calculer les points : 1 point = 100 FCFA
+        const pointsEarned = Math.floor(totalPrice / 100);
+
+        // Mettre à jour le client
+        const customerRef = doc(db, "customers", customerId);
+        const customerSnap = await getDoc(customerRef);
+        
+        if (customerSnap.exists()) {
+          const customerData = customerSnap.data();
+          
+          await updateDoc(customerRef, {
+            loyaltyPoints: (customerData.loyaltyPoints || 0) + pointsEarned,
+            totalSpent: (customerData.totalSpent || 0) + totalPrice,
+            totalOrders: (customerData.totalOrders || 0) + 1,
+          });
+
+          // Mettre à jour la commande
+          await updateDoc(docRef, {
+            status: input.status,
+            loyaltyPointsEarned: pointsEarned,
+          });
+
+          return {
+            success: true,
+            message: `Statut mis à jour. Le client a gagné ${pointsEarned} points de fidélité !`,
+          };
+        }
+      }
+
+      // Sinon, mise à jour normale
       await updateDoc(docRef, {
         status: input.status,
       });

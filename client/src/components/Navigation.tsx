@@ -1,14 +1,16 @@
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { Phone, ShoppingCart, Menu } from "lucide-react";
+import { Phone, ShoppingCart, Menu, User } from "lucide-react";
 import { Link, useLocation } from "wouter";
 import { Sheet, SheetContent, SheetTrigger } from "@/components/ui/sheet";
 import { useCart } from "@/contexts/CartContext";
+import { trpc } from "@/lib/trpc";
 
 export default function Navigation() {
   const [location] = useLocation();
   const { getTotalItems } = useCart();
   const cartItemsCount = getTotalItems();
+  const { data: customerAuth } = trpc.customers.checkAuth.useQuery();
 
   const navItems = [
     { label: "Accueil", path: "/" },
@@ -70,6 +72,21 @@ export default function Navigation() {
                 )}
               </Button>
             </Link>
+            {customerAuth?.isAuthenticated ? (
+              <Link href="/mon-espace">
+                <Button variant="outline" className="gap-2">
+                  <User className="w-4 h-4" />
+                  Mon Espace
+                </Button>
+              </Link>
+            ) : (
+              <Link href="/connexion-client">
+                <Button variant="outline" className="gap-2">
+                  <User className="w-4 h-4" />
+                  Connexion
+                </Button>
+              </Link>
+            )}
             <Link href="/commander">
               <Button className="gap-2 bg-blue-600 hover:bg-blue-700">
                 Commander
