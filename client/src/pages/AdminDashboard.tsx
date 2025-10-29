@@ -100,19 +100,7 @@ export default function AdminDashboard() {
     }
   };
 
-  if (isLoadingAuth || isLoadingOrders) {
-    return (
-      <div className="min-h-screen flex items-center justify-center">
-        <div className="w-16 h-16 border-4 border-blue-600 border-t-transparent rounded-full animate-spin"></div>
-      </div>
-    );
-  }
-
-  if (!authData?.isAuthenticated) {
-    return null;
-  }
-
-  // Calculate statistics
+  // Calculate statistics - MUST be before any conditional returns
   const stats = useMemo(() => {
     if (!ordersData) return null;
 
@@ -147,6 +135,18 @@ export default function AdminDashboard() {
       averageOrderValue
     };
   }, [ordersData]);
+
+  if (isLoadingAuth || isLoadingOrders) {
+    return (
+      <div className="min-h-screen flex items-center justify-center">
+        <div className="w-16 h-16 border-4 border-blue-600 border-t-transparent rounded-full animate-spin"></div>
+      </div>
+    );
+  }
+
+  if (!authData?.isAuthenticated) {
+    return null;
+  }
 
   return (
     <div className="min-h-screen bg-slate-50">
