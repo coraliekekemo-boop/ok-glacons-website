@@ -1,32 +1,21 @@
+import { drizzle } from "drizzle-orm/libsql";
+import { createClient } from "@libsql/client";
+import { users } from "../drizzle/schema";
 import { eq } from "drizzle-orm";
-import { drizzle } from "drizzle-orm/mysql2";
-import { InsertUser, users, products, orders, orderItems, contactMessages, InsertOrder, InsertContactMessage } from "../drizzle/schema";
+import { InsertUser } from "../drizzle/schema";
 import { ENV } from './_core/env';
 
-let _db: ReturnType<typeof drizzle> | null = null;
+// Create libsql client (works with local file or remote Turso)
+const client = createClient({
+  url: process.env.DATABASE_URL || 'file:local.db',
+});
 
-// Lazily create the drizzle instance so local tooling can run without a DB.
-export async function getDb() {
-  if (!_db && process.env.DATABASE_URL) {
-    try {
-      _db = drizzle(process.env.DATABASE_URL);
-    } catch (error) {
-      console.warn("[Database] Failed to connect:", error);
-      _db = null;
-    }
-  }
-  return _db;
-}
+// Create drizzle instance
+export const db = drizzle(client);
 
 export async function upsertUser(user: InsertUser): Promise<void> {
   if (!user.openId) {
     throw new Error("User openId is required for upsert");
-  }
-
-  const db = await getDb();
-  if (!db) {
-    console.warn("[Database] Cannot upsert user: database not available");
-    return;
   }
 
   try {
@@ -68,9 +57,16 @@ export async function upsertUser(user: InsertUser): Promise<void> {
       updateSet.lastSignedIn = new Date();
     }
 
-    await db.insert(users).values(values).onDuplicateKeyUpdate({
-      set: updateSet,
-    });
+    // Check if user exists
+    const existingUser = await getUserByOpenId(user.openId);
+    
+    if (existingUser) {
+      // Update existing user
+      await db.update(users).set(updateSet as any).where(eq(users.openId, user.openId));
+    } else {
+      // Insert new user
+      await db.insert(users).values(values as any);
+    }
   } catch (error) {
     console.error("[Database] Failed to upsert user:", error);
     throw error;
@@ -78,52 +74,6 @@ export async function upsertUser(user: InsertUser): Promise<void> {
 }
 
 export async function getUserByOpenId(openId: string) {
-  const db = await getDb();
-  if (!db) {
-    console.warn("[Database] Cannot get user: database not available");
-    return undefined;
-  }
-
   const result = await db.select().from(users).where(eq(users.openId, openId)).limit(1);
-
   return result.length > 0 ? result[0] : undefined;
-}
-
-export async function getAllProducts() {
-  const db = await getDb();
-  if (!db) {
-    console.warn("[Database] Cannot get products: database not available");
-    return [];
-  }
-  return await db.select().from(users);
-}
-
-export async function getProductById(id: number) {
-  const db = await getDb();
-  if (!db) {
-    console.warn("[Database] Cannot get product: database not available");
-    return undefined;
-  }
-  const result = await db.select().from(products).where(eq(products.id, id)).limit(1);
-  return result.length > 0 ? result[0] : undefined;
-}
-
-export async function createOrder(order: InsertOrder) {
-  const db = await getDb();
-  if (!db) {
-    console.warn("[Database] Cannot create order: database not available");
-    return undefined;
-  }
-  const result = await db.insert(orders).values(order);
-  return result;
-}
-
-export async function createContactMessage(message: InsertContactMessage) {
-  const db = await getDb();
-  if (!db) {
-    console.warn("[Database] Cannot create contact message: database not available");
-    return undefined;
-  }
-  const result = await db.insert(contactMessages).values(message);
-  return result;
 }

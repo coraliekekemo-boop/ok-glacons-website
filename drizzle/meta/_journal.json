@@ -1,19 +1,12 @@
 {
   "version": "7",
-  "dialect": "mysql",
+  "dialect": "sqlite",
   "entries": [
     {
       "idx": 0,
-      "version": "5",
-      "when": 1761727456505,
-      "tag": "0000_gifted_gambit",
-      "breakpoints": true
-    },
-    {
-      "idx": 1,
-      "version": "5",
-      "when": 1761727496892,
-      "tag": "0001_wet_true_believers",
+      "version": "6",
+      "when": 1761747357875,
+      "tag": "0000_rapid_landau",
       "breakpoints": true
     }
   ]

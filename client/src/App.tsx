@@ -4,11 +4,16 @@ import NotFound from "@/pages/NotFound";
 import { Route, Switch } from "wouter";
 import ErrorBoundary from "./components/ErrorBoundary";
 import { ThemeProvider } from "./contexts/ThemeContext";
+import { CartProvider } from "./contexts/CartContext";
 import Home from "./pages/Home";
 import Products from "./pages/Products";
 import ProductDetail from "./pages/ProductDetail";
 import About from "./pages/About";
 import Contact from "./pages/Contact";
+import Order from "./pages/Order";
+import Cart from "./pages/Cart";
+import AdminLogin from "./pages/AdminLogin";
+import AdminDashboard from "./pages/AdminDashboard";
 
 function Router() {
   // make sure to consider if you need authentication for certain routes
@@ -19,6 +24,10 @@ function Router() {
       <Route path={"/produits/:id"} component={ProductDetail} />
       <Route path={"/a-propos"} component={About} />
       <Route path={"/contact"} component={Contact} />
+      <Route path={"/panier"} component={Cart} />
+      <Route path={"/commander"} component={Order} />
+      <Route path={"/admin/login"} component={AdminLogin} />
+      <Route path={"/admin/dashboard"} component={AdminDashboard} />
       <Route path={"/404"} component={NotFound} />
       {/* Final fallback route */}
       <Route component={NotFound} />
@@ -38,10 +47,12 @@ function App() {
         defaultTheme="light"
         // switchable
       >
-        <TooltipProvider>
-          <Toaster />
-          <Router />
-        </TooltipProvider>
+        <CartProvider>
+          <TooltipProvider>
+            <Toaster />
+            <Router />
+          </TooltipProvider>
+        </CartProvider>
       </ThemeProvider>
     </ErrorBoundary>
   );

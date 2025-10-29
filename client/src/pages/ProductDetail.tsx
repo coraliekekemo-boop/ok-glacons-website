@@ -1,14 +1,49 @@
 import { motion } from "framer-motion";
-import { Sparkles, Snowflake, Box, ChevronRight, ArrowLeft, ShoppingCart, Package, Heart } from "lucide-react";
+import { Sparkles, Snowflake, Box, ChevronRight, ArrowLeft, ShoppingCart, Package, Heart, Plus, Minus } from "lucide-react";
 import { Link, useRoute } from "wouter";
 import Navigation from "@/components/Navigation";
 import Footer from "@/components/Footer";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
+import { useCart, products as cartProducts } from "@/contexts/CartContext";
+import { useState } from "react";
+import { toast } from "sonner";
 
 export default function ProductDetail() {
   const [, params] = useRoute("/produits/:id");
   const categoryId = params?.id;
+  const { addToCart } = useCart();
+  const [quantities, setQuantities] = useState<Record<string, number>>({});
+  
+  // Mapping between display names and cart product IDs
+  const productMapping: Record<string, string> = {
+    "Verres de Glaçons": "glacons-verres",
+    "Glaçons": "glacons-5kg",
+    "Blocs de Glace": "blocs-ancienne",
+    "Glace Carbonique": "glace-carbonique",
+    "Mouchoirs Lanaïa - Tubes": "lanaia-tubes",
+    "Mouchoirs Lanaïa - Paquets": "lanaia-paquets",
+    "Mouchoirs Lanaïa - Formats Individuels": "lanaia-poches"
+  };
+
+  const getQuantity = (productTitle: string) => quantities[productTitle] || 1;
+  
+  const updateQuantity = (productTitle: string, delta: number) => {
+    const currentQty = getQuantity(productTitle);
+    const newQty = Math.max(1, currentQty + delta);
+    setQuantities({ ...quantities, [productTitle]: newQty });
+  };
+
+  const handleAddToCart = (productTitle: string) => {
+    const productId = productMapping[productTitle];
+    const cartProduct = cartProducts.find(p => p.id === productId);
+    
+    if (cartProduct) {
+      const quantity = getQuantity(productTitle);
+      addToCart(cartProduct, quantity);
+      toast.success(`${quantity} ${cartProduct.name} ajouté${quantity > 1 ? 's' : ''} au panier !`);
+    }
+  };
 
   const productsData = {
     "ok-glacons": {
@@ -285,25 +320,63 @@ export default function ProductDetail() {
                         ))}
                       </div>
 
+                      {/* Price */}
+                      {(() => {
+                        const productId = productMapping[product.title];
+                        const cartProduct = cartProducts.find(p => p.id === productId);
+                        return cartProduct && (
+                          <div className="mb-6">
+                            <p className="text-3xl font-bold text-slate-900">
+                              {cartProduct.price.toLocaleString()} FCFA
+                              <span className="text-base text-slate-600 font-normal ml-2">/ {cartProduct.unit}</span>
+                            </p>
+                          </div>
+                        );
+                      })()}
+
                       <div className="flex flex-wrap gap-3">
-                        <Link href="/contact">
-                          <Button 
-                            size="lg"
-                            className={`gap-3 h-14 px-8 font-semibold shadow-lg bg-gradient-to-r ${
-                              isBlue 
-                                ? 'from-blue-600 to-blue-700 hover:from-blue-700 hover:to-blue-800 shadow-blue-600/30'
-                                : 'from-green-600 to-green-700 hover:from-green-700 hover:to-green-800 shadow-green-600/30'
-                            }`}
-                          >
-                            <ShoppingCart className="w-5 h-5" />
-                            Commander maintenant
-                          </Button>
-                        </Link>
-                        <Link href="/contact">
-                          <Button 
-                            size="lg"
+                        {/* Quantity Selector */}
+                        <div className="flex items-center gap-2 border-2 border-slate-200 rounded-lg">
+                          <Button
                             variant="ghost"
-                            className="gap-2 h-14 px-6 font-semibold hover:bg-slate-100"
+                            size="icon"
+                            onClick={() => updateQuantity(product.title, -1)}
+                            className="h-12 w-12"
+                          >
+                            <Minus className="w-4 h-4" />
+                          </Button>
+                          <span className="text-xl font-bold w-12 text-center">
+                            {getQuantity(product.title)}
+                          </span>
+                          <Button
+                            variant="ghost"
+                            size="icon"
+                            onClick={() => updateQuantity(product.title, 1)}
+                            className="h-12 w-12"
+                          >
+                            <Plus className="w-4 h-4" />
+                          </Button>
+                        </div>
+
+                        {/* Add to Cart Button */}
+                        <Button 
+                          size="lg"
+                          onClick={() => handleAddToCart(product.title)}
+                          className={`gap-3 h-12 px-8 font-semibold shadow-lg bg-gradient-to-r ${
+                            isBlue 
+                              ? 'from-blue-600 to-blue-700 hover:from-blue-700 hover:to-blue-800 shadow-blue-600/30'
+                              : 'from-green-600 to-green-700 hover:from-green-700 hover:to-green-800 shadow-green-600/30'
+                          }`}
+                        >
+                          <ShoppingCart className="w-5 h-5" />
+                          Ajouter au panier
+                        </Button>
+                        
+                        <Link href="/contact">
+                          <Button 
+                            size="lg"
+                            variant="outline"
+                            className="gap-2 h-12 px-6 font-semibold"
                           >
                             Demander un devis
                           </Button>

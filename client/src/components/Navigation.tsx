@@ -1,10 +1,14 @@
 import { Button } from "@/components/ui/button";
+import { Badge } from "@/components/ui/badge";
 import { Phone, ShoppingCart, Menu } from "lucide-react";
 import { Link, useLocation } from "wouter";
 import { Sheet, SheetContent, SheetTrigger } from "@/components/ui/sheet";
+import { useCart } from "@/contexts/CartContext";
 
 export default function Navigation() {
   const [location] = useLocation();
+  const { getTotalItems } = useCart();
+  const cartItemsCount = getTotalItems();
 
   const navItems = [
     { label: "Accueil", path: "/" },
@@ -55,9 +59,19 @@ export default function Navigation() {
                 Appeler
               </Button>
             </Link>
-            <Link href="/contact">
-              <Button className="gap-2 bg-blue-600 hover:bg-blue-700">
+            <Link href="/panier">
+              <Button variant="outline" className="gap-2 relative">
                 <ShoppingCart className="w-4 h-4" />
+                Panier
+                {cartItemsCount > 0 && (
+                  <Badge className="absolute -top-2 -right-2 h-5 min-w-5 flex items-center justify-center bg-red-500 hover:bg-red-600 text-xs px-1.5">
+                    {cartItemsCount}
+                  </Badge>
+                )}
+              </Button>
+            </Link>
+            <Link href="/commander">
+              <Button className="gap-2 bg-blue-600 hover:bg-blue-700">
                 Commander
               </Button>
             </Link>
@@ -115,12 +129,26 @@ export default function Navigation() {
                     Appeler maintenant
                   </Button>
                 </Link>
-                <Link href="/contact">
+                <Link href="/panier">
+                  <Button 
+                    variant="outline"
+                    size="lg"
+                    className="w-full gap-3 border-2 hover:bg-slate-50 h-14 text-base font-semibold relative"
+                  >
+                    <ShoppingCart className="w-5 h-5" />
+                    Mon Panier
+                    {cartItemsCount > 0 && (
+                      <Badge className="absolute -top-1 right-4 h-6 min-w-6 flex items-center justify-center bg-red-500 hover:bg-red-600">
+                        {cartItemsCount}
+                      </Badge>
+                    )}
+                  </Button>
+                </Link>
+                <Link href="/commander">
                   <Button 
                     size="lg"
                     className="w-full gap-3 bg-gradient-to-r from-blue-600 to-blue-700 hover:from-blue-700 hover:to-blue-800 h-14 text-base font-semibold shadow-lg shadow-blue-600/30"
                   >
-                    <ShoppingCart className="w-5 h-5" />
                     Commander
                   </Button>
                 </Link>
