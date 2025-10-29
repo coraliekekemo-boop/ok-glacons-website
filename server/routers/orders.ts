@@ -1,8 +1,18 @@
 import { z } from "zod";
 import { publicProcedure, router } from "../_core/trpc";
-import { db } from "../db";
-import { orders, orderItems } from "../../drizzle/schema";
-import { eq, desc } from "drizzle-orm";
+import { db } from "../firebase";
+import {
+  collection,
+  addDoc,
+  getDocs,
+  getDoc,
+  doc,
+  updateDoc,
+  deleteDoc,
+  orderBy,
+  query,
+  Timestamp,
+} from "firebase/firestore";
 
 export const ordersRouter = router({
   // Create a new order
@@ -27,85 +37,66 @@ export const ordersRouter = router({
       })
     )
     .mutation(async ({ input }) => {
-      // Create the order
-      const result = await db.insert(orders).values({
+      // Create the order with items
+      const orderData = {
         customerName: input.customerName,
         customerPhone: input.customerPhone,
         deliveryAddress: input.deliveryAddress,
         deliveryDate: input.deliveryDate,
-        isUrgent: input.isUrgent ? 1 : 0,
-        notes: input.notes || null,
+        isUrgent: input.isUrgent,
+        notes: input.notes || "",
         totalPrice: input.totalPrice,
         status: "pending",
-      });
+        items: input.items.map((item) => ({
+          productName: item.productName,
+          productUnit: item.productUnit,
+          quantity: item.quantity,
+          pricePerUnit: item.pricePerUnit,
+          totalPrice: item.pricePerUnit * item.quantity,
+        })),
+        createdAt: Timestamp.now(),
+      };
 
-      const orderId = Number(result.lastInsertRowid);
-
-      // Create order items
-      const itemsToInsert = input.items.map((item) => ({
-        orderId: orderId,
-        productName: item.productName,
-        productUnit: item.productUnit,
-        quantity: item.quantity,
-        pricePerUnit: item.pricePerUnit,
-        totalPrice: item.pricePerUnit * item.quantity,
-      }));
-
-      await db.insert(orderItems).values(itemsToInsert);
+      const docRef = await addDoc(collection(db, "orders"), orderData);
 
       return {
         success: true,
-        orderId: orderId,
+        orderId: docRef.id,
         message: "Commande enregistrée avec succès!",
       };
     }),
 
   // Get all orders (for admin)
   getAll: publicProcedure.query(async () => {
-    const allOrders = await db
-      .select()
-      .from(orders)
-      .orderBy(desc(orders.createdAt));
+    const ordersRef = collection(db, "orders");
+    const q = query(ordersRef, orderBy("createdAt", "desc"));
+    const querySnapshot = await getDocs(q);
 
-    // Get items for each order
-    const ordersWithItems = await Promise.all(
-      allOrders.map(async (order) => {
-        const items = await db
-          .select()
-          .from(orderItems)
-          .where(eq(orderItems.orderId, order.id));
+    const orders = querySnapshot.docs.map((doc) => ({
+      id: doc.id,
+      ...doc.data(),
+      // Convert Firestore Timestamp to ISO string
+      createdAt: doc.data().createdAt?.toDate().toISOString() || new Date().toISOString(),
+    }));
 
-        return {
-          ...order,
-          items,
-        };
-      })
-    );
-
-    return ordersWithItems;
+    return orders;
   }),
 
   // Get a single order
   getById: publicProcedure
-    .input(z.object({ id: z.number() }))
+    .input(z.object({ id: z.string() }))
     .query(async ({ input }) => {
-      const [order] = await db
-        .select()
-        .from(orders)
-        .where(eq(orders.id, input.id));
+      const docRef = doc(db, "orders", input.id);
+      const docSnap = await getDoc(docRef);
 
-      if (!order) {
+      if (!docSnap.exists()) {
         throw new Error("Commande non trouvée");
       }
 
-      const items = await db
-        .select()
-        .from(orderItems)
-        .where(eq(orderItems.orderId, order.id));
-
       return {
-        ...order,
-        items,
+        id: docSnap.id,
+        ...docSnap.data(),
+        createdAt: docSnap.data().createdAt?.toDate().toISOString() || new Date().toISOString(),
       };
     }),
 
@@ -113,15 +104,15 @@ export const ordersRouter = router({
   updateStatus: publicProcedure
     .input(
       z.object({
-        orderId: z.number(),
+        orderId: z.string(),
         status: z.enum(["pending", "confirmed", "in_delivery", "delivered", "cancelled"]),
       })
     )
     .mutation(async ({ input }) => {
-      await db
-        .update(orders)
-        .set({ status: input.status })
-        .where(eq(orders.id, input.orderId));
+      const docRef = doc(db, "orders", input.orderId);
+      await updateDoc(docRef, {
+        status: input.status,
+      });
 
       return {
         success: true,
@@ -131,13 +122,10 @@ export const ordersRouter = router({
 
   // Delete an order
   delete: publicProcedure
-    .input(z.object({ orderId: z.number() }))
+    .input(z.object({ orderId: z.string() }))
     .mutation(async ({ input }) => {
-      // Delete order items first (foreign key)
-      await db.delete(orderItems).where(eq(orderItems.orderId, input.orderId));
-
-      // Then delete the order
-      await db.delete(orders).where(eq(orders.id, input.orderId));
+      const docRef = doc(db, "orders", input.orderId);
+      await deleteDoc(docRef);
 
       return {
         success: true,

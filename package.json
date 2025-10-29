@@ -10,9 +10,7 @@
     "check": "tsc --noEmit",
     "format": "prettier --write .",
     "test": "vitest run",
-    "db:generate": "drizzle-kit generate",
-    "db:init": "tsx server/initDb.ts",
-    "db:admin": "tsx server/createAdmin.ts"
+    "db:admin": "tsx server/createAdminFirebase.ts"
   },
   "dependencies": {
     "@aws-sdk/client-s3": "^3.693.0",
@@ -60,6 +58,7 @@
     "drizzle-orm": "^0.44.5",
     "embla-carousel-react": "^8.6.0",
     "express": "^4.21.2",
+    "firebase": "^12.4.0",
     "framer-motion": "^12.23.22",
     "input-otp": "^1.4.2",
     "jose": "6.1.0",

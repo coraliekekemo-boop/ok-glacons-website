@@ -64,7 +64,7 @@ export default function AdminDashboard() {
     }
   };
 
-  const handleDeleteOrder = async (orderId: number) => {
+  const handleDeleteOrder = async (orderId: string) => {
     if (!confirm("Êtes-vous sûr de vouloir supprimer cette commande ?")) {
       return;
     }
@@ -78,7 +78,7 @@ export default function AdminDashboard() {
     }
   };
 
-  const handleUpdateStatus = async (orderId: number, status: OrderStatus) => {
+  const handleUpdateStatus = async (orderId: string, status: OrderStatus) => {
     try {
       await updateStatusMutation.mutateAsync({ orderId, status });
       toast.success("Statut mis à jour");
