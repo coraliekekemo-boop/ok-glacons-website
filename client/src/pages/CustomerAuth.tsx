@@ -9,7 +9,8 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Card } from "@/components/ui/card";
-import { User, Lock, Phone, Mail, MapPin, Gift, LogIn, UserPlus, Award, Star, Heart } from "lucide-react";
+import { Badge } from "@/components/ui/badge";
+import { User, Lock, Phone, Mail, MapPin, Gift, LogIn, UserPlus, Award, Star, Heart, ShieldCheck, Send, Check } from "lucide-react";
 
 export default function CustomerAuth() {
   const [, setLocation] = useLocation();
@@ -19,13 +20,65 @@ export default function CustomerAuth() {
     phone: "",
     email: "",
     password: "",
+    confirmPassword: "",
     address: "",
     referralCode: "",
   });
+  
+  // États pour la vérification OTP
+  const [otpSent, setOtpSent] = useState(false);
+  const [otpCode, setOtpCode] = useState("");
+  const [phoneVerified, setPhoneVerified] = useState(false);
+  const [devOtpCode, setDevOtpCode] = useState<string | null>(null);
 
   const loginMutation = trpc.customers.login.useMutation();
   const registerMutation = trpc.customers.register.useMutation();
   const useReferralMutation = trpc.customers.useReferralCode.useMutation();
+  const sendOTPMutation = trpc.otp.sendOTP.useMutation();
+  const verifyOTPMutation = trpc.otp.verifyOTP.useMutation();
+  const deleteOTPMutation = trpc.otp.deleteOTP.useMutation();
+
+  // Envoyer le code OTP
+  const handleSendOTP = async () => {
+    if (!formData.phone || formData.phone.length < 8) {
+      toast.error("Veuillez entrer un numéro de téléphone valide");
+      return;
+    }
+
+    try {
+      const result = await sendOTPMutation.mutateAsync({ phone: formData.phone });
+      setOtpSent(true);
+      
+      // En mode développement, afficher le code
+      if (result.devCode) {
+        setDevOtpCode(result.devCode);
+        toast.success(`📱 Code envoyé ! (DEV: ${result.devCode})`);
+      } else {
+        toast.success("📱 Code envoyé par WhatsApp ! Vérifiez vos messages.");
+      }
+    } catch (error: any) {
+      toast.error(error.message || "Erreur lors de l'envoi du code");
+    }
+  };
+
+  // Vérifier le code OTP
+  const handleVerifyOTP = async () => {
+    if (otpCode.length !== 6) {
+      toast.error("Le code doit contenir 6 chiffres");
+      return;
+    }
+
+    try {
+      await verifyOTPMutation.mutateAsync({
+        phone: formData.phone,
+        code: otpCode,
+      });
+      setPhoneVerified(true);
+      toast.success("✅ Numéro vérifié avec succès !");
+    } catch (error: any) {
+      toast.error(error.message || "Code invalide ou expiré");
+    }
+  };
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -39,6 +92,22 @@ export default function CustomerAuth() {
         toast.success("🎉 Connexion réussie ! Bienvenue !");
         setLocation("/mon-espace");
       } else {
+        // Validations pour l'inscription
+        if (!phoneVerified) {
+          toast.error("Veuillez vérifier votre numéro de téléphone avec le code OTP");
+          return;
+        }
+
+        if (formData.password !== formData.confirmPassword) {
+          toast.error("Les mots de passe ne correspondent pas");
+          return;
+        }
+
+        if (formData.password.length < 6) {
+          toast.error("Le mot de passe doit contenir au moins 6 caractères");
+          return;
+        }
+
         await registerMutation.mutateAsync({
           name: formData.name,
           phone: formData.phone,
@@ -46,24 +115,24 @@ export default function CustomerAuth() {
           password: formData.password,
           address: formData.address || undefined,
         });
+        
+        // Supprimer l'OTP après création du compte
+        await deleteOTPMutation.mutateAsync({ phone: formData.phone });
+        
         toast.success("✨ Compte créé avec succès ! Bienvenue dans la famille Coradis !");
         
         // Si un code de parrainage a été saisi, l'appliquer
         if (formData.referralCode.trim()) {
-          console.log("[FRONTEND] Applying referral code:", formData.referralCode.trim());
           try {
-            const result = await useReferralMutation.mutateAsync({ 
+            await useReferralMutation.mutateAsync({ 
               referralCode: formData.referralCode.trim() 
             });
-            console.log("[FRONTEND] Referral code applied successfully:", result);
             toast.success("🎁 Code de parrainage validé ! Votre parrain recevra son ticket après votre première livraison.");
           } catch (error: any) {
-            console.error("[FRONTEND] Error applying referral code:", error);
             toast.error("Erreur avec le code de parrainage : " + error.message);
           }
         }
         
-        // Petite pause pour que les tickets soient chargés
         await new Promise(resolve => setTimeout(resolve, 1000));
         setLocation("/mon-espace");
       }
@@ -98,40 +167,26 @@ export default function CustomerAuth() {
             
             {/* Benefits Icons */}
             <div className="flex justify-center gap-8 flex-wrap">
-              <motion.div
-                initial={{ scale: 0 }}
-                animate={{ scale: 1 }}
-                transition={{ delay: 0.2 }}
-                className="flex items-center gap-2 bg-white/10 backdrop-blur px-4 py-2 rounded-full"
-              >
-                <Award className="w-5 h-5" />
-                <span className="text-sm font-medium">Points de fidélité</span>
-              </motion.div>
-              <motion.div
-                initial={{ scale: 0 }}
-                animate={{ scale: 1 }}
-                transition={{ delay: 0.3 }}
-                className="flex items-center gap-2 bg-white/10 backdrop-blur px-4 py-2 rounded-full"
-              >
-                <Gift className="w-5 h-5" />
-                <span className="text-sm font-medium">Récompenses</span>
-              </motion.div>
-              <motion.div
-                initial={{ scale: 0 }}
-                animate={{ scale: 1 }}
-                transition={{ delay: 0.4 }}
-                className="flex items-center gap-2 bg-white/10 backdrop-blur px-4 py-2 rounded-full"
-              >
-                <Heart className="w-5 h-5" />
-                <span className="text-sm font-medium">Commandes favorites</span>
-              </motion.div>
+              <Badge className="bg-white/20 backdrop-blur px-6 py-3 text-base font-medium border-white/30">
+                <Award className="w-5 h-5 mr-2" />
+                Points de fidélité
+              </Badge>
+              <Badge className="bg-white/20 backdrop-blur px-6 py-3 text-base font-medium border-white/30">
+                <Gift className="w-5 h-5 mr-2" />
+                Récompenses
+              </Badge>
+              <Badge className="bg-white/20 backdrop-blur px-6 py-3 text-base font-medium border-white/30">
+                <Heart className="w-5 h-5 mr-2" />
+                Commandes favorites
+              </Badge>
             </div>
           </motion.div>
         </div>
       </section>
 
+      {/* Main Content */}
       <section className="py-16 px-4">
-        <div className="container mx-auto max-w-5xl">
+        <div className="container mx-auto max-w-6xl">
           <div className="grid lg:grid-cols-2 gap-12 items-start">
             {/* Left Side - Auth Form */}
             <motion.div
@@ -139,150 +194,284 @@ export default function CustomerAuth() {
               animate={{ opacity: 1, x: 0 }}
               transition={{ duration: 0.6 }}
             >
-              <Card className="p-8 shadow-2xl border-2 border-blue-100">
+              <Card className="p-8 shadow-2xl border-2 border-slate-100">
                 {/* Tabs */}
-                <div className="flex gap-4 mb-8 border-b-2">
+                <div className="flex gap-4 mb-8">
                   <button
-                    onClick={() => setIsLogin(true)}
-                    className={`flex-1 py-3 font-bold text-lg transition-all ${
+                    onClick={() => {
+                      setIsLogin(true);
+                      setOtpSent(false);
+                      setPhoneVerified(false);
+                      setOtpCode("");
+                    }}
+                    className={`flex-1 py-4 px-6 rounded-xl font-bold text-lg transition-all ${
                       isLogin
-                        ? "text-blue-600 border-b-4 border-blue-600 -mb-0.5"
-                        : "text-slate-400 hover:text-slate-600"
+                        ? "bg-blue-600 text-white shadow-lg scale-105"
+                        : "bg-slate-100 text-slate-600 hover:bg-slate-200"
                     }`}
                   >
-                    <div className="flex items-center justify-center gap-2">
-                      <LogIn className="w-5 h-5" />
-                      Se connecter
-                    </div>
+                    <LogIn className="w-5 h-5 inline mr-2" />
+                    Se connecter
                   </button>
                   <button
-                    onClick={() => setIsLogin(false)}
-                    className={`flex-1 py-3 font-bold text-lg transition-all ${
+                    onClick={() => {
+                      setIsLogin(false);
+                      setOtpSent(false);
+                      setPhoneVerified(false);
+                      setOtpCode("");
+                    }}
+                    className={`flex-1 py-4 px-6 rounded-xl font-bold text-lg transition-all ${
                       !isLogin
-                        ? "text-purple-600 border-b-4 border-purple-600 -mb-0.5"
-                        : "text-slate-400 hover:text-slate-600"
+                        ? "bg-purple-600 text-white shadow-lg scale-105"
+                        : "bg-slate-100 text-slate-600 hover:bg-slate-200"
                     }`}
                   >
-                    <div className="flex items-center justify-center gap-2">
-                      <UserPlus className="w-5 h-5" />
-                      S'inscrire
-                    </div>
+                    <UserPlus className="w-5 h-5 inline mr-2" />
+                    S'inscrire
                   </button>
                 </div>
 
+                {/* Form */}
                 <AnimatePresence mode="wait">
                   <motion.form
                     key={isLogin ? "login" : "register"}
-                    initial={{ opacity: 0, x: isLogin ? -20 : 20 }}
-                    animate={{ opacity: 1, x: 0 }}
-                    exit={{ opacity: 0, x: isLogin ? 20 : -20 }}
+                    initial={{ opacity: 0, y: 20 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    exit={{ opacity: 0, y: -20 }}
                     transition={{ duration: 0.3 }}
                     onSubmit={handleSubmit}
                     className="space-y-5"
                   >
-                {!isLogin && (
-                  <div>
-                    <Label htmlFor="name">Nom complet *</Label>
-                    <div className="relative">
-                      <User className="absolute left-3 top-3 w-5 h-5 text-slate-400" />
-                      <Input
-                        id="name"
-                        type="text"
-                        placeholder="Jean Dupont"
-                        value={formData.name}
-                        onChange={(e) => setFormData({ ...formData, name: e.target.value })}
-                        className="pl-10"
-                        required
-                      />
-                    </div>
-                  </div>
-                )}
-
-                <div>
-                  <Label htmlFor="phone">Numéro de téléphone *</Label>
-                  <div className="relative">
-                    <Phone className="absolute left-3 top-3 w-5 h-5 text-slate-400" />
-                    <Input
-                      id="phone"
-                      type="tel"
-                      placeholder="0748330051"
-                      value={formData.phone}
-                      onChange={(e) => setFormData({ ...formData, phone: e.target.value })}
-                      className="pl-10"
-                      required
-                    />
-                  </div>
-                </div>
-
-                {!isLogin && (
-                  <>
-                    <div>
-                      <Label htmlFor="email">Email (optionnel)</Label>
-                      <div className="relative">
-                        <Mail className="absolute left-3 top-3 w-5 h-5 text-slate-400" />
-                        <Input
-                          id="email"
-                          type="email"
-                          placeholder="jean@example.com"
-                          value={formData.email}
-                          onChange={(e) => setFormData({ ...formData, email: e.target.value })}
-                          className="pl-10"
-                        />
+                    {!isLogin && (
+                      <div>
+                        <Label htmlFor="name">Nom complet *</Label>
+                        <div className="relative">
+                          <User className="absolute left-3 top-3 w-5 h-5 text-slate-400" />
+                          <Input
+                            id="name"
+                            type="text"
+                            placeholder="Jean Kouassi"
+                            value={formData.name}
+                            onChange={(e) => setFormData({ ...formData, name: e.target.value })}
+                            className="pl-10"
+                            required
+                          />
+                        </div>
                       </div>
-                    </div>
+                    )}
 
                     <div>
-                      <Label htmlFor="address">Adresse de livraison (optionnel)</Label>
+                      <Label htmlFor="phone">Numéro de téléphone *</Label>
                       <div className="relative">
-                        <MapPin className="absolute left-3 top-3 w-5 h-5 text-slate-400" />
+                        <Phone className="absolute left-3 top-3 w-5 h-5 text-slate-400" />
                         <Input
-                          id="address"
-                          type="text"
-                          placeholder="Cocody, Riviera..."
-                          value={formData.address}
-                          onChange={(e) => setFormData({ ...formData, address: e.target.value })}
+                          id="phone"
+                          type="tel"
+                          placeholder="0748330051"
+                          value={formData.phone}
+                          onChange={(e) => setFormData({ ...formData, phone: e.target.value })}
                           className="pl-10"
+                          required
+                          disabled={!isLogin && phoneVerified}
+                        />
+                        {!isLogin && phoneVerified && (
+                          <Check className="absolute right-3 top-3 w-5 h-5 text-green-500" />
+                        )}
+                      </div>
+                      
+                      {/* Vérification OTP pour inscription */}
+                      {!isLogin && !phoneVerified && (
+                        <div className="mt-3 space-y-3">
+                          {!otpSent ? (
+                            <Button
+                              type="button"
+                              onClick={handleSendOTP}
+                              variant="outline"
+                              className="w-full border-2 border-blue-200 hover:bg-blue-50"
+                              disabled={sendOTPMutation.isPending || !formData.phone}
+                            >
+                              {sendOTPMutation.isPending ? (
+                                <>
+                                  <div className="w-4 h-4 border-2 border-blue-600 border-t-transparent rounded-full animate-spin mr-2"></div>
+                                  Envoi en cours...
+                                </>
+                              ) : (
+                                <>
+                                  <Send className="w-4 h-4 mr-2" />
+                                  Envoyer le code de vérification
+                                </>
+                              )}
+                            </Button>
+                          ) : (
+                            <div className="space-y-2">
+                              <div className="bg-blue-50 p-4 rounded-lg border-2 border-blue-200">
+                                <p className="text-sm font-semibold text-blue-900 mb-2">
+                                  📱 Code envoyé par WhatsApp !
+                                </p>
+                                <p className="text-xs text-blue-700">
+                                  Vérifiez vos messages WhatsApp et entrez le code à 6 chiffres
+                                </p>
+                                {devOtpCode && (
+                                  <p className="text-xs font-mono bg-yellow-100 p-2 rounded mt-2 text-center">
+                                    DEV CODE: <strong>{devOtpCode}</strong>
+                                  </p>
+                                )}
+                              </div>
+                              
+                              <div className="flex gap-2">
+                                <Input
+                                  type="text"
+                                  placeholder="Code à 6 chiffres"
+                                  value={otpCode}
+                                  onChange={(e) => setOtpCode(e.target.value.replace(/\D/g, '').slice(0, 6))}
+                                  maxLength={6}
+                                  className="flex-1 text-center text-lg font-mono tracking-widest"
+                                />
+                                <Button
+                                  type="button"
+                                  onClick={handleVerifyOTP}
+                                  disabled={verifyOTPMutation.isPending || otpCode.length !== 6}
+                                  className="bg-green-600 hover:bg-green-700"
+                                >
+                                  {verifyOTPMutation.isPending ? (
+                                    <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin"></div>
+                                  ) : (
+                                    <>
+                                      <ShieldCheck className="w-4 h-4 mr-1" />
+                                      Vérifier
+                                    </>
+                                  )}
+                                </Button>
+                              </div>
+                              
+                              <Button
+                                type="button"
+                                onClick={handleSendOTP}
+                                variant="ghost"
+                                size="sm"
+                                className="w-full text-xs"
+                                disabled={sendOTPMutation.isPending}
+                              >
+                                Renvoyer le code
+                              </Button>
+                            </div>
+                          )}
+                        </div>
+                      )}
+                      
+                      {!isLogin && phoneVerified && (
+                        <div className="mt-2 flex items-center gap-2 text-sm text-green-600 font-semibold">
+                          <Check className="w-4 h-4" />
+                          Numéro vérifié
+                        </div>
+                      )}
+                    </div>
+
+                    {!isLogin && (
+                      <>
+                        <div>
+                          <Label htmlFor="email">Email (optionnel)</Label>
+                          <div className="relative">
+                            <Mail className="absolute left-3 top-3 w-5 h-5 text-slate-400" />
+                            <Input
+                              id="email"
+                              type="email"
+                              placeholder="jean@example.com"
+                              value={formData.email}
+                              onChange={(e) => setFormData({ ...formData, email: e.target.value })}
+                              className="pl-10"
+                            />
+                          </div>
+                        </div>
+
+                        <div>
+                          <Label htmlFor="address">Adresse de livraison (optionnel)</Label>
+                          <div className="relative">
+                            <MapPin className="absolute left-3 top-3 w-5 h-5 text-slate-400" />
+                            <Input
+                              id="address"
+                              type="text"
+                              placeholder="Cocody, Riviera..."
+                              value={formData.address}
+                              onChange={(e) => setFormData({ ...formData, address: e.target.value })}
+                              className="pl-10"
+                            />
+                          </div>
+                        </div>
+                      </>
+                    )}
+
+                    <div>
+                      <Label htmlFor="password">Mot de passe *</Label>
+                      <div className="relative">
+                        <Lock className="absolute left-3 top-3 w-5 h-5 text-slate-400" />
+                        <Input
+                          id="password"
+                          type="password"
+                          placeholder="••••••••"
+                          value={formData.password}
+                          onChange={(e) => setFormData({ ...formData, password: e.target.value })}
+                          className="pl-10"
+                          required
                         />
                       </div>
+                      {!isLogin && (
+                        <p className="text-xs text-slate-500 mt-1">
+                          Minimum 6 caractères
+                        </p>
+                      )}
                     </div>
-                  </>
-                )}
 
-                <div>
-                  <Label htmlFor="password">Mot de passe *</Label>
-                  <div className="relative">
-                    <Lock className="absolute left-3 top-3 w-5 h-5 text-slate-400" />
-                    <Input
-                      id="password"
-                      type="password"
-                      placeholder="••••••••"
-                      value={formData.password}
-                      onChange={(e) => setFormData({ ...formData, password: e.target.value })}
-                      className="pl-10"
-                      required
-                    />
-                  </div>
-                </div>
+                    {!isLogin && (
+                      <>
+                        <div>
+                          <Label htmlFor="confirmPassword">Confirmer le mot de passe *</Label>
+                          <div className="relative">
+                            <Lock className="absolute left-3 top-3 w-5 h-5 text-slate-400" />
+                            <Input
+                              id="confirmPassword"
+                              type="password"
+                              placeholder="••••••••"
+                              value={formData.confirmPassword}
+                              onChange={(e) => setFormData({ ...formData, confirmPassword: e.target.value })}
+                              className="pl-10"
+                              required
+                            />
+                            {formData.confirmPassword && formData.password === formData.confirmPassword && (
+                              <Check className="absolute right-3 top-3 w-5 h-5 text-green-500" />
+                            )}
+                          </div>
+                          {formData.confirmPassword && formData.password !== formData.confirmPassword && (
+                            <p className="text-xs text-red-500 mt-1">
+                              ❌ Les mots de passe ne correspondent pas
+                            </p>
+                          )}
+                          {formData.confirmPassword && formData.password === formData.confirmPassword && (
+                            <p className="text-xs text-green-600 mt-1">
+                              ✅ Les mots de passe correspondent
+                            </p>
+                          )}
+                        </div>
 
-                {!isLogin && (
-                  <div>
-                    <Label htmlFor="referralCode">Code de parrainage (optionnel)</Label>
-                    <div className="relative">
-                      <Gift className="absolute left-3 top-3 w-5 h-5 text-slate-400" />
-                      <Input
-                        id="referralCode"
-                        type="text"
-                        placeholder="ABC123"
-                        value={formData.referralCode}
-                        onChange={(e) => setFormData({ ...formData, referralCode: e.target.value.toUpperCase() })}
-                        className="pl-10"
-                      />
-                    </div>
-                    <p className="text-xs text-slate-500 mt-1">
-                      🎁 Le parrain recevra un ticket à gratter lors de votre première livraison !
-                    </p>
-                  </div>
-                )}
+                        <div>
+                          <Label htmlFor="referralCode">Code de parrainage (optionnel)</Label>
+                          <div className="relative">
+                            <Gift className="absolute left-3 top-3 w-5 h-5 text-slate-400" />
+                            <Input
+                              id="referralCode"
+                              type="text"
+                              placeholder="ABC123"
+                              value={formData.referralCode}
+                              onChange={(e) => setFormData({ ...formData, referralCode: e.target.value.toUpperCase() })}
+                              className="pl-10"
+                            />
+                          </div>
+                          <p className="text-xs text-slate-500 mt-1">
+                            🎁 Le parrain recevra un ticket à gratter lors de votre première livraison !
+                          </p>
+                        </div>
+                      </>
+                    )}
 
                     <Button
                       type="submit"
@@ -291,7 +480,11 @@ export default function CustomerAuth() {
                           ? "bg-blue-600 hover:bg-blue-700"
                           : "bg-purple-600 hover:bg-purple-700"
                       }`}
-                      disabled={loginMutation.isPending || registerMutation.isPending}
+                      disabled={
+                        loginMutation.isPending || 
+                        registerMutation.isPending ||
+                        (!isLogin && !phoneVerified)
+                      }
                     >
                       {loginMutation.isPending || registerMutation.isPending ? (
                         <span className="flex items-center gap-2">
@@ -350,17 +543,9 @@ export default function CustomerAuth() {
                       </div>
                       <div>
                         <h3 className="font-bold text-lg text-slate-900 mb-1">Récompenses Exclusives</h3>
-                        <p className="text-slate-600 text-sm mb-2">
-                          Profitez de réductions automatiques tous les 10 achats !
+                        <p className="text-slate-600 text-sm">
+                          Tickets à gratter, réductions, et cadeaux surprises pour nos clients fidèles !
                         </p>
-                        <div className="flex gap-2 text-xs">
-                          <span className="bg-green-100 text-green-700 px-2 py-1 rounded-full font-medium">
-                            -10% / 10 commandes
-                          </span>
-                          <span className="bg-purple-100 text-purple-700 px-2 py-1 rounded-full font-medium">
-                            🎁 Ticket à gratter
-                          </span>
-                        </div>
                       </div>
                     </div>
                   </Card>
@@ -373,7 +558,7 @@ export default function CustomerAuth() {
                       <div>
                         <h3 className="font-bold text-lg text-slate-900 mb-1">Commandes Simplifiées</h3>
                         <p className="text-slate-600 text-sm">
-                          Enregistrez vos commandes favorites et recommandez en 1 clic. Plus besoin de tout re-saisir !
+                          Sauvegardez vos commandes favorites et recommandez en un clic !
                         </p>
                       </div>
                     </div>
@@ -387,7 +572,7 @@ export default function CustomerAuth() {
                       <div>
                         <h3 className="font-bold text-lg text-slate-900 mb-1">Historique & Statistiques</h3>
                         <p className="text-slate-600 text-sm">
-                          Suivez toutes vos commandes, consultez vos statistiques et gérez vos points facilement.
+                          Suivez vos commandes, vos économies et votre progression vers le statut VIP !
                         </p>
                       </div>
                     </div>
@@ -395,17 +580,19 @@ export default function CustomerAuth() {
                 </div>
 
                 {/* Trust Banner */}
-                <Card className="p-6 mt-6 bg-gradient-to-r from-slate-900 to-slate-700 text-white border-0">
-                  <div className="text-center">
-                    <p className="text-sm opacity-90 mb-2">Déjà membre de la famille Coradis</p>
-                    <p className="text-3xl font-bold">+500 clients</p>
-                    <div className="flex justify-center gap-1 mt-2">
-                      {[1,2,3,4,5].map(i => (
-                        <Star key={i} className="w-4 h-4 fill-yellow-400 text-yellow-400" />
+                <div className="mt-8 bg-gradient-to-r from-slate-900 to-slate-800 text-white p-6 rounded-2xl">
+                  <div className="flex items-center justify-between">
+                    <div>
+                      <p className="text-2xl font-bold mb-1">+500 clients</p>
+                      <p className="text-sm opacity-75">nous font confiance</p>
+                    </div>
+                    <div className="flex gap-1">
+                      {[1, 2, 3, 4, 5].map((i) => (
+                        <Star key={i} className="w-5 h-5 fill-yellow-400 text-yellow-400" />
                       ))}
                     </div>
                   </div>
-                </Card>
+                </div>
               </div>
             </motion.div>
           </div>
