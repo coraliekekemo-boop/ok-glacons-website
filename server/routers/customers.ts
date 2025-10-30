@@ -484,8 +484,8 @@ export const customersRouter = router({
     const scratchCardsCollection = collection(db, "scratchCards");
     const q = query(
       scratchCardsCollection, 
-      where("customerId", "==", session.id),
-      orderBy("createdAt", "desc")
+      where("customerId", "==", session.id)
+      // orderBy temporairement désactivé car nécessite un index Firestore
     );
     const querySnapshot = await getDocs(q);
     
