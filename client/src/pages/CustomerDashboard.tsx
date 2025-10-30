@@ -8,6 +8,7 @@ import Footer from "@/components/Footer";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
+import ScratchCard from "@/components/ScratchCard";
 import {
   LogOut,
   Award,
@@ -782,94 +783,57 @@ export default function CustomerDashboard() {
               </div>
 
               {scratchCards && scratchCards.length > 0 ? (
-                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
                   {scratchCards.map((card: any) => (
                     <motion.div
                       key={card.id}
                       initial={{ scale: 0.9, opacity: 0 }}
                       animate={{ scale: 1, opacity: 1 }}
-                      whileHover={{ scale: card.scratched ? 1 : 1.05 }}
-                      className="relative"
+                      transition={{ duration: 0.3 }}
                     >
-                      <Card className={`p-6 relative overflow-hidden ${
-                        card.scratched 
-                          ? 'bg-gradient-to-br from-slate-100 to-slate-200 border-2 border-slate-300' 
-                          : 'bg-gradient-to-br from-orange-400 via-orange-500 to-orange-600 border-2 border-orange-700 shadow-2xl'
-                      }`}>
-                        {/* Decorative elements for unscratched cards */}
-                        {!card.scratched && (
-                          <>
-                            <div className="absolute top-0 right-0 w-32 h-32 bg-white/10 rounded-full -translate-y-1/2 translate-x-1/2"></div>
-                            <div className="absolute bottom-0 left-0 w-24 h-24 bg-white/10 rounded-full translate-y-1/2 -translate-x-1/2"></div>
-                          </>
-                        )}
-
-                        <div className="relative z-10">
-                          {!card.scratched ? (
-                            <>
-                              <div className="text-center mb-6">
-                                <div className="bg-white/20 backdrop-blur p-4 rounded-2xl mb-4 inline-block">
-                                  <Gift className="w-16 h-16 text-white" />
-                                </div>
-                                <h3 className="text-2xl font-bold text-white mb-2">
-                                  🎁 Cadeau Mystère
-                                </h3>
-                                <p className="text-white/90 text-sm">
-                                  Grattez pour découvrir !
-                                </p>
-                              </div>
-
-                              <Button
-                                onClick={() => handleScratchCard(card.id)}
-                                disabled={scratchCardMutation.isPending}
-                                className="w-full bg-white text-orange-600 hover:bg-white/90 font-bold text-lg py-6 shadow-xl"
-                              >
-                                {scratchCardMutation.isPending ? (
-                                  <>
-                                    <div className="w-5 h-5 border-3 border-orange-600 border-t-transparent rounded-full animate-spin mr-2"></div>
-                                    Grattage...
-                                  </>
-                                ) : (
-                                  <>
-                                    <Sparkles className="w-5 h-5 mr-2" />
-                                    Gratter le Ticket
-                                  </>
-                                )}
-                              </Button>
-                            </>
-                          ) : (
-                            <>
-                              <div className="text-center mb-4">
-                                <Badge className="bg-green-500 text-white mb-3 px-4 py-2 text-sm">
-                                  ✓ Déjà gratté
-                                </Badge>
-                                <div className="bg-gradient-to-br from-green-500 to-green-600 p-6 rounded-2xl mb-4">
-                                  <Gift className="w-12 h-12 text-white mx-auto mb-3" />
-                                  <h3 className="text-xl font-bold text-white mb-1">
-                                    Vous avez gagné :
-                                  </h3>
-                                  <p className="text-white/90 font-semibold text-lg">
-                                    {card.rewardLabel}
-                                  </p>
-                                </div>
-                                <p className="text-xs text-slate-500">
-                                  Contactez-nous pour récupérer votre cadeau
-                                </p>
-                              </div>
-                            </>
-                          )}
-
-                          <div className="mt-4 pt-4 border-t border-white/20">
-                            <p className="text-xs text-center text-white/70">
-                              {new Date(card.createdAt).toLocaleDateString('fr-FR', {
+                      {!card.scratched ? (
+                        <div>
+                          <ScratchCard
+                            reward={card.reward}
+                            rewardLabel={card.rewardLabel}
+                            onComplete={() => handleScratchCard(card.id)}
+                          />
+                          <p className="text-center text-sm text-slate-500 mt-4">
+                            Ajouté le {new Date(card.createdAt).toLocaleDateString('fr-FR', {
+                              day: 'numeric',
+                              month: 'long',
+                              year: 'numeric'
+                            })}
+                          </p>
+                        </div>
+                      ) : (
+                        <Card className="p-6 bg-gradient-to-br from-slate-100 to-slate-200 border-2 border-slate-300">
+                          <div className="text-center">
+                            <Badge className="bg-green-500 text-white mb-4 px-4 py-2">
+                              ✓ Déjà gratté
+                            </Badge>
+                            <div className="bg-gradient-to-br from-green-500 to-green-600 p-8 rounded-2xl mb-4">
+                              <Gift className="w-16 h-16 text-white mx-auto mb-4" />
+                              <h3 className="text-2xl font-bold text-white mb-2">
+                                Vous avez gagné :
+                              </h3>
+                              <p className="text-white/90 font-semibold text-xl">
+                                {card.rewardLabel}
+                              </p>
+                            </div>
+                            <p className="text-sm text-slate-600 mb-4">
+                              Contactez-nous pour récupérer votre cadeau
+                            </p>
+                            <p className="text-xs text-slate-400">
+                              Gratté le {new Date(card.scratchedAt).toLocaleDateString('fr-FR', {
                                 day: 'numeric',
                                 month: 'long',
                                 year: 'numeric'
                               })}
                             </p>
                           </div>
-                        </div>
-                      </Card>
+                        </Card>
+                      )}
                     </motion.div>
                   ))}
                 </div>
