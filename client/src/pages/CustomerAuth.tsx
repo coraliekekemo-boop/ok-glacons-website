@@ -25,6 +25,7 @@ export default function CustomerAuth() {
 
   const loginMutation = trpc.customers.login.useMutation();
   const registerMutation = trpc.customers.register.useMutation();
+  const useReferralMutation = trpc.customers.useReferralCode.useMutation();
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -48,12 +49,18 @@ export default function CustomerAuth() {
         toast.success("✨ Compte créé avec succès ! Bienvenue dans la famille Coradis !");
         
         // Si un code de parrainage a été saisi, l'appliquer
-        if (formData.referralCode) {
-          // On appliquera le code après la connexion automatique
-          setLocation("/mon-espace");
-        } else {
-          setLocation("/mon-espace");
+        if (formData.referralCode.trim()) {
+          try {
+            await useReferralMutation.mutateAsync({ 
+              referralCode: formData.referralCode.trim() 
+            });
+            toast.success("🎁 Code de parrainage appliqué ! Découvrez votre ticket à gratter dans votre espace !");
+          } catch (error: any) {
+            toast.warning("Le code de parrainage n'a pas pu être appliqué : " + error.message);
+          }
         }
+        
+        setLocation("/mon-espace");
       }
     } catch (error: any) {
       toast.error(error.message || "Une erreur est survenue");
@@ -267,7 +274,7 @@ export default function CustomerAuth() {
                       />
                     </div>
                     <p className="text-xs text-slate-500 mt-1">
-                      Recevez 2000 FCFA de crédit avec un code parrain
+                      🎁 Recevez un ticket à gratter pour gagner un cadeau surprise !
                     </p>
                   </div>
                 )}
@@ -346,7 +353,7 @@ export default function CustomerAuth() {
                             -10% / 10 commandes
                           </span>
                           <span className="bg-purple-100 text-purple-700 px-2 py-1 rounded-full font-medium">
-                            2000F parrainage
+                            🎁 Ticket à gratter
                           </span>
                         </div>
                       </div>
