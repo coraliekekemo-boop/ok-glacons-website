@@ -50,16 +50,21 @@ export default function CustomerAuth() {
         
         // Si un code de parrainage a été saisi, l'appliquer
         if (formData.referralCode.trim()) {
+          console.log("[FRONTEND] Applying referral code:", formData.referralCode.trim());
           try {
-            await useReferralMutation.mutateAsync({ 
+            const result = await useReferralMutation.mutateAsync({ 
               referralCode: formData.referralCode.trim() 
             });
+            console.log("[FRONTEND] Referral code applied successfully:", result);
             toast.success("🎁 Code de parrainage appliqué ! Découvrez votre ticket à gratter dans votre espace !");
           } catch (error: any) {
-            toast.warning("Le code de parrainage n'a pas pu être appliqué : " + error.message);
+            console.error("[FRONTEND] Error applying referral code:", error);
+            toast.error("Erreur avec le code de parrainage : " + error.message);
           }
         }
         
+        // Petite pause pour que les tickets soient chargés
+        await new Promise(resolve => setTimeout(resolve, 1000));
         setLocation("/mon-espace");
       }
     } catch (error: any) {

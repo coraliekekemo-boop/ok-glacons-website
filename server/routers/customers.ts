@@ -248,13 +248,33 @@ export const customersRouter = router({
       })
     )
     .mutation(async ({ input, ctx }) => {
+      console.log("[REFERRAL] Starting referral code application...", input.referralCode);
+      
       const sessionCookie = ctx.req?.cookies?.customer_session;
 
       if (!sessionCookie) {
+        console.log("[REFERRAL] ERROR: No session cookie found");
         throw new Error("Non authentifié");
       }
 
       const session = JSON.parse(sessionCookie);
+      console.log("[REFERRAL] Session found for customer:", session.id);
+      
+      // Vérifier si le client n'a pas déjà utilisé un code de parrainage
+      const customerRef = doc(db, "customers", session.id);
+      const customerSnap = await getDoc(customerRef);
+      
+      if (!customerSnap.exists()) {
+        console.log("[REFERRAL] ERROR: Customer not found");
+        throw new Error("Client introuvable");
+      }
+      
+      const customerData = customerSnap.data();
+      
+      if (customerData.referredBy) {
+        console.log("[REFERRAL] ERROR: Customer already used a referral code");
+        throw new Error("Vous avez déjà utilisé un code de parrainage");
+      }
       
       // Trouver le parrain
       const customersCollection = collection(db, "customers");
@@ -262,13 +282,16 @@ export const customersRouter = router({
       const querySnapshot = await getDocs(q);
 
       if (querySnapshot.empty) {
+        console.log("[REFERRAL] ERROR: Invalid referral code");
         throw new Error("Code de parrainage invalide");
       }
 
       const referrerDoc = querySnapshot.docs[0];
       const referrerId = referrerDoc.id;
+      console.log("[REFERRAL] Referrer found:", referrerId);
 
       if (referrerId === session.id) {
+        console.log("[REFERRAL] ERROR: Cannot use own code");
         throw new Error("Vous ne pouvez pas utiliser votre propre code");
       }
 
@@ -286,7 +309,7 @@ export const customersRouter = router({
       // Créer un ticket à gratter pour le filleul
       const scratchCardsCollection = collection(db, "scratchCards");
       const referredReward = generateRandomReward();
-      await addDoc(scratchCardsCollection, {
+      const referredCardRef = await addDoc(scratchCardsCollection, {
         customerId: session.id,
         reward: referredReward.type,
         rewardLabel: referredReward.label,
@@ -294,10 +317,11 @@ export const customersRouter = router({
         createdAt: new Date().toISOString(),
         scratchedAt: null,
       });
+      console.log("[REFERRAL] Created scratch card for referred customer:", referredCardRef.id, referredReward.label);
 
       // Créer un ticket à gratter pour le parrain
       const referrerReward = generateRandomReward();
-      await addDoc(scratchCardsCollection, {
+      const referrerCardRef = await addDoc(scratchCardsCollection, {
         customerId: referrerId,
         reward: referrerReward.type,
         rewardLabel: referrerReward.label,
@@ -305,13 +329,15 @@ export const customersRouter = router({
         createdAt: new Date().toISOString(),
         scratchedAt: null,
       });
+      console.log("[REFERRAL] Created scratch card for referrer:", referrerCardRef.id, referrerReward.label);
 
       // Marquer le client comme parrainé
-      const customerRef = doc(db, "customers", session.id);
       await updateDoc(customerRef, {
         referredBy: referrerId,
       });
+      console.log("[REFERRAL] Marked customer as referred");
 
+      console.log("[REFERRAL] SUCCESS: Referral code applied successfully");
       return {
         success: true,
         message: "Code de parrainage appliqué ! Grattez votre ticket pour découvrir votre cadeau 🎁",
@@ -453,6 +479,7 @@ export const customersRouter = router({
     }
 
     const session = JSON.parse(sessionCookie);
+    console.log("[SCRATCH_CARDS] Fetching scratch cards for customer:", session.id);
     
     const scratchCardsCollection = collection(db, "scratchCards");
     const q = query(
@@ -466,6 +493,8 @@ export const customersRouter = router({
       id: doc.id,
       ...doc.data(),
     }));
+    
+    console.log("[SCRATCH_CARDS] Found", scratchCards.length, "cards");
 
     return scratchCards;
   }),
