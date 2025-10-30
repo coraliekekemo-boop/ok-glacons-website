@@ -135,12 +135,42 @@ export const ordersRouter = router({
         
         if (customerSnap.exists()) {
           const customerData = customerSnap.data();
+          const currentTotalOrders = customerData.totalOrders || 0;
           
           await updateDoc(customerRef, {
             loyaltyPoints: (customerData.loyaltyPoints || 0) + pointsEarned,
             totalSpent: (customerData.totalSpent || 0) + totalPrice,
-            totalOrders: (customerData.totalOrders || 0) + 1,
+            totalOrders: currentTotalOrders + 1,
           });
+
+          // Si c'est la PREMIÈRE commande livrée (currentTotalOrders === 0) 
+          // ET que le client a été parrainé, donner un ticket au PARRAIN
+          if (currentTotalOrders === 0 && customerData.referredBy) {
+            const referrerId = customerData.referredBy;
+            console.log("[ORDER_DELIVERY] First order delivered for referred customer! Creating scratch card for referrer:", referrerId);
+            
+            // Générer un reward aléatoire
+            const rewards = [
+              { type: "lanaia_tube", label: "Tube Lanaïa Gratuit" },
+              { type: "lanaia_paquet", label: "Paquet Lanaïa Gratuit" },
+              { type: "lanaia_poche", label: "Paquet Lanaïa Poche Gratuit" },
+              { type: "livraison_gratuite", label: "Livraison Gratuite" },
+            ];
+            const reward = rewards[Math.floor(Math.random() * rewards.length)];
+            
+            // Créer un ticket à gratter pour le PARRAIN
+            const scratchCardsCollection = collection(db, "scratchCards");
+            const cardRef = await addDoc(scratchCardsCollection, {
+              customerId: referrerId,
+              reward: reward.type,
+              rewardLabel: reward.label,
+              scratched: false,
+              createdAt: new Date().toISOString(),
+              scratchedAt: null,
+              reason: "referral_reward", // Raison du ticket
+            });
+            console.log("[ORDER_DELIVERY] Scratch card created for referrer:", cardRef.id, reward.label);
+          }
 
           // Mettre à jour la commande
           await updateDoc(docRef, {

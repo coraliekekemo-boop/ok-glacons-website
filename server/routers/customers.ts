@@ -295,52 +295,17 @@ export const customersRouter = router({
         throw new Error("Vous ne pouvez pas utiliser votre propre code");
       }
 
-      // Fonction pour générer un reward aléatoire
-      const generateRandomReward = () => {
-        const rewards = [
-          { type: "lanaia_tube", label: "Tube Lanaïa Gratuit" },
-          { type: "lanaia_paquet", label: "Paquet Lanaïa Gratuit" },
-          { type: "lanaia_poche", label: "Paquet Lanaïa Poche Gratuit" },
-          { type: "livraison_gratuite", label: "Livraison Gratuite" },
-        ];
-        return rewards[Math.floor(Math.random() * rewards.length)];
-      };
-
-      // Créer un ticket à gratter pour le filleul
-      const scratchCardsCollection = collection(db, "scratchCards");
-      const referredReward = generateRandomReward();
-      const referredCardRef = await addDoc(scratchCardsCollection, {
-        customerId: session.id,
-        reward: referredReward.type,
-        rewardLabel: referredReward.label,
-        scratched: false,
-        createdAt: new Date().toISOString(),
-        scratchedAt: null,
-      });
-      console.log("[REFERRAL] Created scratch card for referred customer:", referredCardRef.id, referredReward.label);
-
-      // Créer un ticket à gratter pour le parrain
-      const referrerReward = generateRandomReward();
-      const referrerCardRef = await addDoc(scratchCardsCollection, {
-        customerId: referrerId,
-        reward: referrerReward.type,
-        rewardLabel: referrerReward.label,
-        scratched: false,
-        createdAt: new Date().toISOString(),
-        scratchedAt: null,
-      });
-      console.log("[REFERRAL] Created scratch card for referrer:", referrerCardRef.id, referrerReward.label);
-
       // Marquer le client comme parrainé
+      // Note: Les tickets à gratter seront donnés lors de la livraison des commandes
       await updateDoc(customerRef, {
         referredBy: referrerId,
       });
       console.log("[REFERRAL] Marked customer as referred");
 
-      console.log("[REFERRAL] SUCCESS: Referral code applied successfully");
+      console.log("[REFERRAL] SUCCESS: Referral link established. Referrer will receive scratch card after first delivery.");
       return {
         success: true,
-        message: "Code de parrainage appliqué ! Grattez votre ticket pour découvrir votre cadeau 🎁",
+        message: "Code de parrainage validé ! Votre parrain recevra son ticket après votre première livraison.",
       };
     }),
 

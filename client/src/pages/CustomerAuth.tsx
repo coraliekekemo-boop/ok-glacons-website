@@ -56,7 +56,7 @@ export default function CustomerAuth() {
               referralCode: formData.referralCode.trim() 
             });
             console.log("[FRONTEND] Referral code applied successfully:", result);
-            toast.success("🎁 Code de parrainage appliqué ! Découvrez votre ticket à gratter dans votre espace !");
+            toast.success("🎁 Code de parrainage validé ! Votre parrain recevra son ticket après votre première livraison.");
           } catch (error: any) {
             console.error("[FRONTEND] Error applying referral code:", error);
             toast.error("Erreur avec le code de parrainage : " + error.message);
@@ -279,7 +279,7 @@ export default function CustomerAuth() {
                       />
                     </div>
                     <p className="text-xs text-slate-500 mt-1">
-                      🎁 Recevez un ticket à gratter pour gagner un cadeau surprise !
+                      🎁 Le parrain recevra un ticket à gratter lors de votre première livraison !
                     </p>
                   </div>
                 )}

@@ -455,7 +455,7 @@ export default function CustomerDashboard() {
                   Parrainez vos amis !
                 </h2>
                 <p className="text-lg opacity-90 mb-4">
-                  Vous et votre filleul recevez chacun <span className="font-bold text-yellow-300">un ticket à gratter 🎁</span> pour gagner un cadeau surprise !
+                  Recevez <span className="font-bold text-yellow-300">un ticket à gratter 🎁</span> pour chaque filleul qui complète sa première commande !
                 </p>
                 <div className="flex items-center gap-2 text-sm opacity-75">
                   <Star className="w-4 h-4 fill-white" />
