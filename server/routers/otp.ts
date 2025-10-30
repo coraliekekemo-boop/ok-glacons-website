@@ -2,6 +2,7 @@ import { z } from "zod";
 import { publicProcedure, router } from "../_core/trpc";
 import { collection, addDoc, query, where, getDocs, deleteDoc, doc } from "firebase/firestore";
 import { db } from "../firebase";
+import { sendOTPWhatsApp, isTwilioConfigured } from "../services/whatsapp";
 
 // Générer un code OTP à 6 chiffres
 function generateOTP(): string {
@@ -70,23 +71,38 @@ export const otpRouter = router({
         verified: false,
       });
       
-      // TODO: Intégration réelle WhatsApp Business API
-      // Pour l'instant, nous affichons le code dans les logs pour le développement
-      // En production, utilisez Twilio, WhatsApp Business API, ou un service SMS local
+      // Envoyer le code par WhatsApp avec Twilio
+      let whatsappSent = false;
       
-      const whatsappMessage = `🔐 *Coradis - Code de Vérification*\n\nVotre code de vérification est : *${otpCode}*\n\nCe code expire dans 10 minutes.\n\nNe partagez ce code avec personne ! 🔒`;
+      if (isTwilioConfigured()) {
+        try {
+          console.log(`[OTP] Envoi du code via Twilio WhatsApp...`);
+          whatsappSent = await sendOTPWhatsApp(normalizedPhone, otpCode);
+          
+          if (whatsappSent) {
+            console.log(`[OTP] ✅ Code envoyé avec succès via WhatsApp à ${normalizedPhone}`);
+          }
+        } catch (error: any) {
+          console.error(`[OTP] ❌ Erreur Twilio:`, error.message);
+          // Continuer même si l'envoi échoue (afficher le code en fallback)
+        }
+      } else {
+        console.warn('[OTP] ⚠️  Twilio non configuré. Ajoutez TWILIO_ACCOUNT_SID et TWILIO_AUTH_TOKEN.');
+      }
       
-      console.log(`[OTP] Message WhatsApp à envoyer:\n${whatsappMessage}`);
-      
-      // TEMPORAIRE : Toujours retourner le code pour faciliter les tests
-      // TODO: En production réelle (avec vrai WhatsApp), désactiver ceci
-      // const isDev = process.env.NODE_ENV === 'development';
+      // Fallback : Si Twilio n'est pas configuré ou a échoué, afficher le code dans les logs
+      if (!whatsappSent) {
+        console.log(`[OTP] 📝 MODE DÉVELOPPEMENT - Code pour ${normalizedPhone}: ${otpCode}`);
+        console.log(`[OTP] Message qui aurait été envoyé:\n🔐 Coradis - Votre code: ${otpCode} (expire dans 10 min)`);
+      }
       
       return {
         success: true,
-        message: `Code de vérification envoyé au ${normalizedPhone} via WhatsApp`,
-        // Retourner le code pour les tests (à désactiver en prod)
-        devCode: otpCode,
+        message: whatsappSent 
+          ? `Code de vérification envoyé au ${normalizedPhone} via WhatsApp`
+          : `Code de vérification généré (Twilio non configuré)`,
+        // Retourner le code UNIQUEMENT si Twilio n'est pas configuré (mode dev)
+        ...(!whatsappSent && { devCode: otpCode }),
       };
     }),
 
