@@ -6,6 +6,7 @@ import ErrorBoundary from "./components/ErrorBoundary";
 import { ThemeProvider } from "./contexts/ThemeContext";
 import { CartProvider } from "./contexts/CartContext";
 import WhatsAppButton from "./components/WhatsAppButton";
+import PWAInstallPrompt from "./components/PWAInstallPrompt";
 import Home from "./pages/Home";
 import Products from "./pages/Products";
 import ProductDetail from "./pages/ProductDetail";
@@ -59,6 +60,7 @@ function App() {
             <Toaster />
             <Router />
             <WhatsAppButton />
+            <PWAInstallPrompt />
           </TooltipProvider>
         </CartProvider>
       </ThemeProvider>
