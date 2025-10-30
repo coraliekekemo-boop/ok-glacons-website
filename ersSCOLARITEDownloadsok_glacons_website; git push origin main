@@ -1,0 +1,33 @@
+[1mdiff --git a/client/src/components/Navigation.tsx b/client/src/components/Navigation.tsx[m
+[1mindex 1a714dd..63f2946 100644[m
+[1m--- a/client/src/components/Navigation.tsx[m
+[1m+++ b/client/src/components/Navigation.tsx[m
+[36m@@ -128,7 +128,7 @@[m [mexport default function Navigation() {[m
+               </div>[m
+ [m
+               {/* Navigation Links */}[m
+[31m-              <nav className="flex flex-col gap-2 mt-6">[m
+[32m+[m[32m              <nav className="flex flex-col gap-2 mt-6 pb-[320px]">[m
+                 {navItems.map((item, index) => ([m
+                   <Link key={item.path} href={item.path}>[m
+                     <a [m
+[1mdiff --git a/client/src/components/PWAInstallPrompt.tsx b/client/src/components/PWAInstallPrompt.tsx[m
+[1mindex 5416f53..5b7f68d 100644[m
+[1m--- a/client/src/components/PWAInstallPrompt.tsx[m
+[1m+++ b/client/src/components/PWAInstallPrompt.tsx[m
+[36m@@ -26,7 +26,14 @@[m [mexport default function PWAInstallPrompt() {[m
+     const standalone = window.matchMedia('(display-mode: standalone)').matches;[m
+     setIsStandalone(standalone);[m
+ [m
+[31m-    // Écouter l'événement beforeinstallprompt[m
+[32m+[m[32m    // Sur iOS, afficher le prompt après 5 secondes (pas d'événement beforeinstallprompt)[m
+[32m+[m[32m    if (iOS && !standalone) {[m
+[32m+[m[32m      setTimeout(() => {[m
+[32m+[m[32m        setShowPrompt(true);[m
+[32m+[m[32m      }, 5000);[m
+[32m+[m[32m    }[m
+[32m+[m
+[32m+[m[32m    // Écouter l'événement beforeinstallprompt (Android/Chrome)[m
+     const handleBeforeInstallPrompt = (e: Event) => {[m
+       e.preventDefault();[m
+       const promptEvent = e as BeforeInstallPromptEvent;[m

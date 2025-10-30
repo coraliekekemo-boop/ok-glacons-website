@@ -128,7 +128,7 @@ export default function Navigation() {
               </div>
 
               {/* Navigation Links */}
-              <nav className="flex flex-col gap-2 mt-6">
+              <nav className="flex flex-col gap-2 mt-6 pb-[320px]">
                 {navItems.map((item, index) => (
                   <Link key={item.path} href={item.path}>
                     <a 

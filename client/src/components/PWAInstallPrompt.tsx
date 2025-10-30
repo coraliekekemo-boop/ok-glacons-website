@@ -26,7 +26,14 @@ export default function PWAInstallPrompt() {
     const standalone = window.matchMedia('(display-mode: standalone)').matches;
     setIsStandalone(standalone);
 
-    // Écouter l'événement beforeinstallprompt
+    // Sur iOS, afficher le prompt après 5 secondes (pas d'événement beforeinstallprompt)
+    if (iOS && !standalone) {
+      setTimeout(() => {
+        setShowPrompt(true);
+      }, 5000);
+    }
+
+    // Écouter l'événement beforeinstallprompt (Android/Chrome)
     const handleBeforeInstallPrompt = (e: Event) => {
       e.preventDefault();
       const promptEvent = e as BeforeInstallPromptEvent;
