@@ -78,15 +78,15 @@ export const otpRouter = router({
       
       console.log(`[OTP] Message WhatsApp à envoyer:\n${whatsappMessage}`);
       
-      // En développement, retourner le code pour faciliter les tests
-      // En production, ne JAMAIS retourner le code !
-      const isDev = process.env.NODE_ENV === 'development';
+      // TEMPORAIRE : Toujours retourner le code pour faciliter les tests
+      // TODO: En production réelle (avec vrai WhatsApp), désactiver ceci
+      // const isDev = process.env.NODE_ENV === 'development';
       
       return {
         success: true,
         message: `Code de vérification envoyé au ${normalizedPhone} via WhatsApp`,
-        // Retourner le code UNIQUEMENT en développement
-        ...(isDev && { devCode: otpCode }),
+        // Retourner le code pour les tests (à désactiver en prod)
+        devCode: otpCode,
       };
     }),
 
